@@ -43,7 +43,7 @@ import { PrivacyConsentModal } from './components/PrivacyConsentModal';
 import {
   daemonIsLive,
   fetchAppVersionInfo,
-  fetchAgents,
+  fetchAgentsStream,
   fetchDesignSystems,
   fetchDesignTemplates,
   fetchPromptTemplates,
@@ -210,6 +210,23 @@ function mergeAmrModelsIntoAgents(
     if (shouldPreferAgentModels) return agent;
     return { ...agent, models: amrModels.models, modelsSource: 'live' };
   });
+}
+
+function upsertAgent(agents: AgentInfo[], agent: AgentInfo): AgentInfo[] {
+  const index = agents.findIndex((item) => item.id === agent.id);
+  if (index === -1) return [...agents, agent];
+  const next = agents.slice();
+  next[index] = agent;
+  return next;
+}
+
+function isAbortError(err: unknown): boolean {
+  return (
+    typeof err === 'object' &&
+    err !== null &&
+    'name' in err &&
+    (err as { name?: unknown }).name === 'AbortError'
+  );
 }
 
 export function App() {
@@ -442,7 +459,7 @@ function AppInner() {
   // changes; the next capture inherits the fresh values, so dashboards
   // can segment by execution setup without per-helper boilerplate.
   //
-  // Gated on `agentsLoading` so the cold-start probe (`fetchAgents()`
+  // Gated on `agentsLoading` so the cold-start probe (`fetchAgentsStream()`
   // lands asynchronously after this effect's first run) does not stamp
   // the first home/projects/plugins page_view with
   // has_available_configure_cli=false / configure_availability=unavailable
@@ -566,6 +583,7 @@ function AppInner() {
   // gate every tab including the ones that don't need agents at all.
   useEffect(() => {
     let cancelled = false;
+    const agentStreamAbort = new AbortController();
     (async () => {
       const alive = await daemonIsLive();
       if (cancelled) return;
@@ -586,11 +604,30 @@ function AppInner() {
         return;
       }
 
-      void fetchAgents().then((list) => {
-        if (cancelled) return;
-        setAgents(mergeAmrModelsIntoAgents(list, amrModelsRef.current));
-        setAgentsLoading(false);
-      });
+      void fetchAgentsStream({
+        signal: agentStreamAbort.signal,
+        onAgent: (agent) => {
+          if (cancelled) return;
+          setAgents((current) =>
+            mergeAmrModelsIntoAgents(
+              upsertAgent(current, agent),
+              amrModelsRef.current,
+            ),
+          );
+        },
+      })
+        .then((list) => {
+          if (cancelled) return;
+          setAgents(mergeAmrModelsIntoAgents(list, amrModelsRef.current));
+        })
+        .catch((err) => {
+          if (cancelled || isAbortError(err)) return;
+          setAgents([]);
+        })
+        .finally(() => {
+          if (cancelled) return;
+          setAgentsLoading(false);
+        });
 
       // Functional skills + design templates land independently. Both
       // gate `skillsLoading` together so the EntryView stops rendering
@@ -727,6 +764,7 @@ function AppInner() {
     })();
     return () => {
       cancelled = true;
+      agentStreamAbort.abort();
     };
   }, [beginProjectListRequest, reconcileFetchedProjects]);
 
@@ -995,9 +1033,24 @@ function AppInner() {
         await syncConfigToDaemon(nextConfig);
         setConfig(nextConfig);
       }
-      const next = await fetchAgents({ throwOnError: options?.throwOnError });
-      setAgents(mergeAmrModelsIntoAgents(next, amrModelsRef.current));
-      return next;
+      try {
+        const next = await fetchAgentsStream({
+          onAgent: (agent) => {
+            setAgents((current) =>
+              mergeAmrModelsIntoAgents(
+                upsertAgent(current, agent),
+                amrModelsRef.current,
+              ),
+            );
+          },
+        });
+        setAgents(mergeAmrModelsIntoAgents(next, amrModelsRef.current));
+        return next;
+      } catch (err) {
+        if (options?.throwOnError) throw err;
+        setAgents([]);
+        return [];
+      }
     },
     [config],
   );
