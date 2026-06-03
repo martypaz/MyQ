@@ -86,6 +86,18 @@ function readChangelog() {
   return { lines: truncated ? all.slice(0, MAX_CHANGELOG_LINES) : all, truncated, total: all.length };
 }
 
+// Turn the plain-text `git log` line into clickable Feishu links: every PR
+// reference (`#1234`, typically the `(#1234)` suffix a squash-merge leaves on
+// the subject) jumps to the pull request, and the trailing short hash appended
+// by `git log %s (%h)` jumps to the commit. Lines without a PR ref (direct
+// pushes to the release branch) still get their commit linked.
+function linkifyChangelogLine(line) {
+  if (repo.length === 0) return line;
+  return line
+    .replace(/#(\d+)/g, (_match, num) => `[#${num}](https://github.com/${repo}/pull/${num})`)
+    .replace(/\(([0-9a-f]{7,40})\)\s*$/i, (_match, hash) => `([\`${hash}\`](https://github.com/${repo}/commit/${hash}))`);
+}
+
 function changelogMarkdown() {
   const { lines, truncated, total } = readChangelog();
   if (previousCommit.length === 0) {
@@ -94,7 +106,7 @@ function changelogMarkdown() {
   if (lines.length === 0) {
     return `与上个 ${channelLabel} 包之间没有新增提交。`;
   }
-  const body = lines.map((line) => `- ${line}`).join("\n");
+  const body = lines.map((line) => `- ${linkifyChangelogLine(line)}`).join("\n");
   if (truncated) {
     return `${body}\n- …还有 ${total - lines.length} 条提交(共 ${total} 条)`;
   }
