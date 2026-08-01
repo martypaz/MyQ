@@ -76,10 +76,21 @@ Drive it with your keyboard: arrow keys = D-pad, Enter = OK, Esc = Back.
 
 ### On a real Google TV / Android TV box
 
-1. On the TV: **Settings → System → About → Android TV OS build** — click the
-   build entry 7 times to unlock Developer options, then enable
-   **USB debugging** / **Network debugging**.
-2. From your PC (TV and PC on the same network):
+**Enable developer mode first** (exact path shown is Android TV 12; older
+versions use *Settings → Device Preferences → About* instead of *System →
+About*):
+
+1. **Settings → System → About** → scroll to **Android TV OS build**.
+2. Click **OK on that entry 7 times** — a countdown toast appears, then
+   *"You are now a developer!"*.
+3. Back one level: **Settings → System → Developer options** (newly visible,
+   just below About) → enable **USB debugging**. Some models (Sony
+   in particular) have a separate **Network debugging** toggle — enable that
+   too if present. If `adb connect` is refused later, reboot the TV once.
+
+Find the TV's IP under **Settings → Network & Internet → (your network)**.
+
+Then from your PC (TV and PC on the same network):
 
 ```bash
 adb connect <tv-ip>:5555      # TV shows a pairing prompt — accept it
@@ -88,10 +99,14 @@ adb install app/build/outputs/apk/debug/app-debug.apk
 
 MyQ appears in the TV's app row. Two runtime prompts matter:
 
-- **Notification permission** (Android 13+) — accept it, or reminders can't be
-  shown.
+- **Notification permission** (Android 13+ only) — accept it, or reminders
+  can't be shown. On Android 12 and below there is no prompt; notifications
+  just work.
 - **Alarms & reminders** (Android 12+) — if the OS asks, allow it so reminders
   fire at the exact time; otherwise delivery falls into a ~10-minute window.
+
+The app runs on Android 8 (API 26) and newer, so any Android TV 12 set is
+comfortably in range.
 
 ### Using the app
 
