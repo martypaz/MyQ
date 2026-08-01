@@ -50,6 +50,7 @@ fun HomeScreen(viewModel: HomeViewModel) {
             firstName = state.profile.firstName,
             onNameEntered = viewModel::onNameEntered,
             onContinue = viewModel::onWelcomeFinished,
+            isProfileLoaded = state.isProfileLoaded,
         )
         return
     }

@@ -56,6 +56,13 @@ fun WelcomeScreen(
     firstName: String?,
     onNameEntered: (String) -> Unit,
     onContinue: () -> Unit,
+    /**
+     * False until the stored profile has been read. A null [firstName] means
+     * "no name saved", which is indistinguishable from "not looked yet" —
+     * acting on it early flashed the name prompt, and opened the on-screen
+     * keyboard, at someone the app already knew.
+     */
+    isProfileLoaded: Boolean = true,
 ) {
     Box(
         modifier = Modifier
@@ -87,10 +94,13 @@ fun WelcomeScreen(
                 modifier = Modifier.size(96.dp),
             )
 
-            if (firstName == null) {
-                NamePrompt(onNameEntered = onNameEntered)
-            } else {
-                WelcomeBack(firstName = firstName, onContinue = onContinue)
+            when {
+                // Logo only: the panel is already on screen and holds its
+                // size, so the greeting appears inside it rather than
+                // replacing something the viewer had begun to read.
+                !isProfileLoaded -> Unit
+                firstName == null -> NamePrompt(onNameEntered = onNameEntered)
+                else -> WelcomeBack(firstName = firstName, onContinue = onContinue)
             }
         }
     }

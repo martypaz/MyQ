@@ -46,6 +46,8 @@ data class HomeUiState(
     val sources: Set<EpgRepository.Source> = emptySet(),
     val showWelcome: Boolean = true,
     val profile: Profile = Profile(),
+    /** False until the stored profile has been read; see [showWelcome]. */
+    val isProfileLoaded: Boolean = false,
     val destination: NavDestination = NavDestination.HOME,
     val rails: List<Rail> = emptyList(),
     val heroProgramme: Programme? = null,
@@ -77,15 +79,26 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     init {
         _uiState.value = _uiState.value.copy(isDeveloperMode = isDeveloperMode(application))
         refresh()
+
+        // The profile is collected on its own rather than through the bundle
+        // below. The welcome screen cannot decide what to show until it knows
+        // whether there is a name, and combine() waits for every one of its
+        // flows, so sharing meant the greeting waited on listings, reminders,
+        // taste and recordings as well.
+        viewModelScope.launch {
+            app.profileStore.profile.collect { profile ->
+                _uiState.value = _uiState.value.copy(profile = profile, isProfileLoaded = true)
+            }
+        }
+
         viewModelScope.launch {
             combine(
                 programmes,
                 app.reminderStore.reminders,
                 app.tasteStore.profile,
                 app.recordingStore.recordings,
-                app.profileStore.profile,
-            ) { all, reminders, taste, recordings, profile ->
-                Bundle(all, reminders, taste, recordings, profile)
+            ) { all, reminders, taste, recordings ->
+                Bundle(all, reminders, taste, recordings)
             }.collect { bundle ->
                 val forYou = app.recommender.forYou(bundle.taste, bundle.all)
                 val current = _uiState.value
@@ -94,7 +107,6 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                     reminders = bundle.reminders.associateBy { it.programmeId },
                     recordings = bundle.recordings,
                     opinions = bundle.taste.toOpinions(),
-                    profile = bundle.profile,
                     heroProgramme = current.heroProgramme ?: bundle.all.firstOrNull(),
                     searchResults = searchProgrammes(bundle.all, current.searchQuery),
                     dialog = current.dialog?.let { refreshDialog(it, bundle) },
@@ -108,7 +120,6 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         val reminders: List<Reminder>,
         val taste: TasteProfile,
         val recordings: List<RecordEntry>,
-        val profile: Profile,
     )
 
     fun refresh() {
