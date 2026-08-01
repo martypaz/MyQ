@@ -15,26 +15,6 @@ package com.martypaz.myq.data.epg
  */
 fun channelLogoUrl(channelName: String): String? = LOGOS[normaliseChannelName(channelName)]
 
-/**
- * Folds a channel name down to a lookup key. EPG sources disagree on case, on
- * the "HD" and "+1" suffixes, on UKTV's "U&" prefix, and on whether a regional
- * variant is named ("BBC One London" is BBC One as far as an ident goes).
- */
-internal fun normaliseChannelName(name: String): String {
-    var key = name.trim().lowercase()
-    if (key.startsWith("u&")) key = key.removePrefix("u&")
-    key = key.removeSuffix(" hd").removeSuffix(" +1").removeSuffix("+1").trim()
-    return REGIONS.fold(key) { acc, region -> acc.removeSuffix(" $region") }.trim()
-}
-
-/** Regional opt-outs that share a national ident. */
-private val REGIONS = listOf(
-    "london", "anglia", "midlands", "central", "north", "north east", "north west",
-    "south", "south east", "south west", "west", "east", "yorkshire", "wales",
-    "scotland", "northern ireland", "granada", "meridian", "tyne tees", "border",
-    "channel islands", "ci",
-)
-
 private const val TVL = "https://raw.githubusercontent.com/tv-logo/tv-logos/main/countries"
 private const val UK = "$TVL/united-kingdom"
 private const val INT = "$TVL/international"

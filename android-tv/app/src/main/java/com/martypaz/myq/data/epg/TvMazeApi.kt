@@ -103,33 +103,6 @@ internal fun deriveNewness(
     }
 }
 
-/**
- * Matches a TVmaze network name against the UK Freeview line-up. Matching is
- * case-insensitive and ignores UKTV's "U&" rebrand prefix ("U&Dave" ≡ "Dave")
- * so the allowlist survives either naming.
- */
-internal fun isFreeviewChannel(name: String): Boolean =
-    normaliseChannel(name) in NORMALISED_FREEVIEW_CHANNELS
-
-private fun normaliseChannel(name: String): String =
-    name.trim().removePrefix("U&").removePrefix("u&").lowercase()
-
-/** Names as TVmaze reports them for the main UK Freeview line-up. */
-val FREEVIEW_CHANNELS: Set<String> = setOf(
-    "BBC One", "BBC Two", "BBC Three", "BBC Four", "CBBC", "CBeebies",
-    "BBC News", "ITV", "ITV1", "ITV2", "ITV3", "ITV4", "ITVBe",
-    "Channel 4", "E4", "More4", "Film4", "4seven",
-    "Channel 5", "5USA", "5STAR", "5SELECT", "5ACTION",
-    "Dave", "Drama", "Yesterday", "W", "Quest", "Quest Red",
-    "Really", "DMAX", "Food Network", "HGTV", "Blaze",
-    "Sky Arts", "Sky Mix", "Challenge", "Pick", "GREAT! TV",
-    "Legend", "That's TV", "Together TV", "PBS America", "Talking Pictures TV",
-    "London Live", "GB News", "TalkTV", "S4C", "STV",
-)
-
-private val NORMALISED_FREEVIEW_CHANNELS: Set<String> =
-    FREEVIEW_CHANNELS.map(::normaliseChannel).toSet()
-
 // --- TVmaze wire types (subset) ---
 
 @Serializable
