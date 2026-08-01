@@ -20,5 +20,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "freeview-guide-tv"
+rootProject.name = "myq-tv"
 include(":app")

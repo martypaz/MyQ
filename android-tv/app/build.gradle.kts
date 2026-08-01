@@ -6,11 +6,11 @@ plugins {
 }
 
 android {
-    namespace = "com.martypaz.freeviewguide"
+    namespace = "com.martypaz.myq"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.martypaz.freeviewguide"
+        applicationId = "com.martypaz.myq"
         minSdk = 26
         targetSdk = 34
         versionCode = 1
