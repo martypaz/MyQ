@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.martypaz.myq.data.model.Rail
+import com.martypaz.myq.ui.components.GlassBackdrop
 import com.martypaz.myq.ui.components.HeroPanel
 import com.martypaz.myq.ui.components.NavDestination
 import com.martypaz.myq.ui.components.NavRail
@@ -54,6 +55,9 @@ fun HomeScreen(viewModel: HomeViewModel) {
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
+        // Everything above is glass; this is what it refracts.
+        GlassBackdrop(imageUrl = state.heroProgramme?.imageUrl)
+
         Row(modifier = Modifier.fillMaxSize()) {
             NavRail(
                 selected = state.destination,

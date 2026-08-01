@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.sp
 import com.martypaz.myq.data.model.Programme
 import com.martypaz.myq.data.model.Verdict
 import com.martypaz.myq.ui.theme.SkyPalette
+import com.martypaz.myq.ui.components.glass
 
 private val LEAD_HOUR_OPTIONS = listOf(1, 2, 4, 24)
 
@@ -62,13 +63,13 @@ fun ProgrammeDialog(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xE6050A1A)),
+            .background(SkyPalette.ScrimDeep),
         contentAlignment = Alignment.Center,
     ) {
         Column(
             modifier = Modifier
                 .widthIn(max = 780.dp)
-                .background(SkyPalette.MidBlue, RoundedCornerShape(12.dp))
+                .glass(shape = RoundedCornerShape(20.dp))
                 .padding(horizontal = 36.dp, vertical = 28.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -186,9 +187,12 @@ private fun Chip(
                 color = if (emphasised) accent else Color.Transparent,
                 shape = RoundedCornerShape(24.dp),
             )
-            .background(
-                color = if (isFocused) SkyPalette.TextPrimary else SkyPalette.CardBackground,
-                shape = RoundedCornerShape(24.dp),
+            .then(
+                if (isFocused) {
+                    Modifier.background(SkyPalette.TextPrimary, RoundedCornerShape(24.dp))
+                } else {
+                    Modifier.glass(shape = RoundedCornerShape(24.dp))
+                },
             )
             .clickable(interactionSource = interactionSource, indication = null, onClick = onClick)
             .padding(horizontal = 18.dp, vertical = 10.dp),

@@ -38,7 +38,8 @@ fun HeroPanel(
         modifier = modifier
             .fillMaxWidth()
             .height(118.dp)
-            .padding(horizontal = 8.dp),
+            .glass()
+            .padding(horizontal = 20.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         if (programme == null) return@Column

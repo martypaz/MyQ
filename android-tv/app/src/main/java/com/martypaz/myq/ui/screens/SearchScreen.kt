@@ -29,6 +29,7 @@ import com.martypaz.myq.data.model.Platform
 import com.martypaz.myq.data.model.Programme
 import com.martypaz.myq.ui.formatStart
 import com.martypaz.myq.ui.theme.SkyPalette
+import com.martypaz.myq.ui.components.glass
 
 /** Search across everything loaded — Freeview and streaming alike. */
 @Composable
@@ -58,12 +59,7 @@ fun SearchScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(SkyPalette.CardBackground, RoundedCornerShape(8.dp))
-                        .border(
-                            width = 2.dp,
-                            color = if (isFocused) SkyPalette.FocusRing else Color.Transparent,
-                            shape = RoundedCornerShape(8.dp),
-                        )
+                        .glass(focused = isFocused, shape = RoundedCornerShape(12.dp))
                         .padding(horizontal = 16.dp, vertical = 12.dp),
                 ) {
                     if (query.isEmpty()) {

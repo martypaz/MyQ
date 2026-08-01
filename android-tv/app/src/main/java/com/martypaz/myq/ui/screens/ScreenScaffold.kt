@@ -21,6 +21,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.martypaz.myq.ui.theme.SkyPalette
+import com.martypaz.myq.ui.components.glass
 
 /** Shared page header so every secondary screen reads the same way. */
 @Composable
@@ -68,15 +69,7 @@ fun ListRow(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .background(
-                color = if (isFocused) SkyPalette.CardFocused else SkyPalette.CardBackground,
-                shape = RoundedCornerShape(8.dp),
-            )
-            .border(
-                width = if (isFocused) 2.dp else 0.dp,
-                color = if (isFocused) SkyPalette.FocusRing else Color.Transparent,
-                shape = RoundedCornerShape(8.dp),
-            )
+            .glass(focused = isFocused, shape = RoundedCornerShape(12.dp))
             .clickable(interactionSource = interactionSource, indication = null, onClick = onClick)
             .padding(horizontal = 18.dp, vertical = 14.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp),

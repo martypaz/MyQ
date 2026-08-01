@@ -59,9 +59,10 @@ fun NavRail(
             .onFocusChanged { expanded = it.hasFocus }
             .animateContentSize(animationSpec = tween(durationMillis = 200))
             .width(if (expanded) 210.dp else 68.dp)
-            .background(
-                color = if (expanded) Color(0xCC0A142F) else Color.Transparent,
-                shape = RoundedCornerShape(topEnd = 12.dp, bottomEnd = 12.dp),
+            .then(
+                // The rail only becomes a pane once it is in use; collapsed it
+                // should not compete with the content beside it.
+                if (expanded) Modifier.glass(shape = RoundedCornerShape(16.dp)) else Modifier,
             )
             .padding(vertical = 24.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
@@ -87,27 +88,29 @@ private fun NavItem(
     val interactionSource = remember { MutableInteractionSource() }
     val isFocused by interactionSource.collectIsFocusedAsState()
 
-    val background by animateColorAsState(
+    val contentColor by animateColorAsState(
         targetValue = when {
-            isFocused -> SkyPalette.TextPrimary
-            isSelected -> SkyPalette.CardFocused
-            else -> Color.Transparent
+            isFocused -> Color(0xFF060B1D)
+            isSelected -> SkyPalette.TextPrimary
+            else -> SkyPalette.TextSecondary
         },
         animationSpec = tween(durationMillis = 160),
-        label = "navItemBackground",
+        label = "navItemContent",
     )
-    val contentColor = when {
-        isFocused -> Color(0xFF060B1D)
-        isSelected -> SkyPalette.TextPrimary
-        else -> SkyPalette.TextSecondary
-    }
 
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(14.dp),
         modifier = Modifier
             .padding(horizontal = 10.dp)
-            .background(background, RoundedCornerShape(8.dp))
+            .then(
+                when {
+                    // Focus is solid so the glyph inverts and reads instantly.
+                    isFocused -> Modifier.background(SkyPalette.TextPrimary, RoundedCornerShape(10.dp))
+                    isSelected -> Modifier.glass(shape = RoundedCornerShape(10.dp))
+                    else -> Modifier
+                },
+            )
             .clickable(interactionSource = interactionSource, indication = null, onClick = onSelect)
             .padding(horizontal = 12.dp, vertical = 10.dp),
     ) {

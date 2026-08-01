@@ -44,6 +44,7 @@ import com.martypaz.myq.R
 import com.martypaz.myq.ui.components.StarField
 import com.martypaz.myq.ui.theme.SkyPalette
 import kotlinx.coroutines.delay
+import com.martypaz.myq.ui.components.glass
 
 /**
  * First thing MyQ shows: the parallax starfield behind either a name prompt
@@ -63,6 +64,8 @@ fun WelcomeScreen(
     ) {
         StarField(modifier = Modifier.fillMaxSize())
 
+        // The starfield is the backdrop here; the panel below is the glass.
+
         val fade by animateFloatAsState(
             targetValue = 1f,
             animationSpec = tween(durationMillis = 700),
@@ -72,7 +75,10 @@ fun WelcomeScreen(
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(20.dp),
-            modifier = Modifier.alpha(fade),
+            modifier = Modifier
+                .alpha(fade)
+                .glass(shape = RoundedCornerShape(24.dp))
+                .padding(horizontal = 64.dp, vertical = 44.dp),
         ) {
             Image(
                 painter = painterResource(R.drawable.ic_myq_logo),
@@ -150,12 +156,7 @@ private fun NamePrompt(onNameEntered: (String) -> Unit) {
             Box(
                 modifier = Modifier
                     .width(360.dp)
-                    .background(SkyPalette.CardBackground, RoundedCornerShape(8.dp))
-                    .border(
-                        width = 2.dp,
-                        color = if (fieldFocused) SkyPalette.FocusRing else Color.Transparent,
-                        shape = RoundedCornerShape(8.dp),
-                    )
+                    .glass(focused = fieldFocused, shape = RoundedCornerShape(12.dp))
                     .padding(horizontal = 16.dp, vertical = 12.dp),
             ) {
                 if (name.isEmpty()) {
@@ -199,9 +200,12 @@ private fun WelcomeButton(label: String, enabled: Boolean = true, onClick: () ->
             fontWeight = FontWeight.SemiBold,
         ),
         modifier = Modifier
-            .background(
-                color = if (isFocused && enabled) SkyPalette.TextPrimary else SkyPalette.CardBackground,
-                shape = RoundedCornerShape(24.dp),
+            .then(
+                if (isFocused && enabled) {
+                    Modifier.background(SkyPalette.TextPrimary, RoundedCornerShape(24.dp))
+                } else {
+                    Modifier.glass(shape = RoundedCornerShape(24.dp))
+                },
             )
             .clickable(
                 interactionSource = interactionSource,

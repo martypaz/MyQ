@@ -10,8 +10,9 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 
 /**
- * Sky Q-inspired palette: a deep navy vertical gradient with a lighter
- * "glow" band near the top, white text, and translucent white cards.
+ * Sky Q-inspired palette rendered as glassmorphism: a deep navy field with
+ * soft pools of colour, over which every surface is a frosted translucent
+ * pane. Solid fills are reserved for badges, which must stay legible.
  */
 object SkyPalette {
     val TopGlow = Color(0xFF2C5AB8)
@@ -20,12 +21,19 @@ object SkyPalette {
     val DeepNavy = Color(0xFF080F26)
 
     val TextPrimary = Color(0xFFF4F7FF)
-    val TextSecondary = Color(0xB3E6EDFF)
-    val TextTertiary = Color(0x80D7E1FF)
+    val TextSecondary = Color(0xCCE6EDFF)
+    val TextTertiary = Color(0x99D7E1FF)
 
-    val CardBackground = Color(0x22FFFFFF)
-    val CardFocused = Color(0x33FFFFFF)
+    /**
+     * Legacy flat surfaces. New UI should prefer `Modifier.glass()`; these
+     * remain for the few places that need an opaque backing.
+     */
+    val CardBackground = Color(0x1FFFFFFF)
+    val CardFocused = Color(0x3DFFFFFF)
     val FocusRing = Color(0xFFFFFFFF)
+
+    /** Panel behind modal content — darker so the glass above it reads. */
+    val ScrimDeep = Color(0xE60A1024)
 
     val AccentBadge = Color(0xFFF2A93B)   // "New series" amber, like Sky's highlight chips
     val ReminderBadge = Color(0xFF41C7C7) // teal for reminder-set state

@@ -63,13 +63,7 @@ fun ProgrammeCard(
             .width(224.dp)
             .height(126.dp)
             .scale(scale)
-            .clip(RoundedCornerShape(6.dp))
-            .background(if (isFocused) SkyPalette.CardFocused else SkyPalette.CardBackground)
-            .border(
-                width = if (isFocused) 3.dp else 0.dp,
-                color = if (isFocused) SkyPalette.FocusRing else Color.Transparent,
-                shape = RoundedCornerShape(6.dp),
-            )
+            .glass(focused = isFocused, shape = RoundedCornerShape(10.dp))
             .onFocusChanged { if (it.isFocused) onFocused(programme) }
             .clickable(
                 interactionSource = interactionSource,
@@ -92,13 +86,13 @@ fun ProgrammeCard(
                 .background(
                     Brush.verticalGradient(
                         0f to Color.Transparent,
-                        0.55f to Color.Transparent,
-                        1f to Color(0xCC060B1D),
+                        0.48f to Color.Transparent,
+                        1f to Color(0xD9060B1D),
                     ),
                 ),
         )
 
-        // Channel chip, top-left — mirrors the channel idents on Sky Q tiles.
+        // Channel chip, top-left — a frosted ident, mirroring Sky Q's tiles.
         BasicText(
             text = programme.channelName,
             style = TextStyle(
@@ -111,8 +105,8 @@ fun ProgrammeCard(
             modifier = Modifier
                 .align(Alignment.TopStart)
                 .padding(8.dp)
-                .background(Color(0x99060B1D), RoundedCornerShape(3.dp))
-                .padding(horizontal = 6.dp, vertical = 2.dp),
+                .glass(shape = RoundedCornerShape(5.dp))
+                .padding(horizontal = 7.dp, vertical = 3.dp),
         )
 
         val badge = when {

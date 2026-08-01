@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.martypaz.myq.data.prefs.Profile
 import com.martypaz.myq.ui.theme.SkyPalette
+import com.martypaz.myq.ui.components.glass
 
 private val LEAD_HOUR_OPTIONS = listOf(1, 2, 4, 24)
 
@@ -72,12 +73,7 @@ fun SettingsScreen(
                         modifier = Modifier
                             .widthIn(max = 380.dp)
                             .fillMaxWidth()
-                            .background(SkyPalette.CardBackground, RoundedCornerShape(8.dp))
-                            .border(
-                                width = 2.dp,
-                                color = if (isFocused) SkyPalette.FocusRing else Color.Transparent,
-                                shape = RoundedCornerShape(8.dp),
-                            )
+                            .glass(focused = isFocused, shape = RoundedCornerShape(12.dp))
                             .padding(horizontal = 14.dp, vertical = 10.dp),
                     ) {
                         if (name.isEmpty()) {
@@ -161,9 +157,12 @@ private fun SettingChip(label: String, emphasised: Boolean = false, onClick: () 
                 color = if (emphasised) SkyPalette.ReminderBadge else Color.Transparent,
                 shape = RoundedCornerShape(24.dp),
             )
-            .background(
-                color = if (isFocused) SkyPalette.TextPrimary else SkyPalette.CardBackground,
-                shape = RoundedCornerShape(24.dp),
+            .then(
+                if (isFocused) {
+                    Modifier.background(SkyPalette.TextPrimary, RoundedCornerShape(24.dp))
+                } else {
+                    Modifier.glass(shape = RoundedCornerShape(24.dp))
+                },
             )
             .clickable(interactionSource = interactionSource, indication = null, onClick = onClick)
             .padding(horizontal = 18.dp, vertical = 10.dp),
