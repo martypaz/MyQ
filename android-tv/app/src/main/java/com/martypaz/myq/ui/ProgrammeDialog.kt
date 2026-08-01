@@ -42,15 +42,14 @@ import com.martypaz.myq.data.model.Newness
 import com.martypaz.myq.data.model.Programme
 import com.martypaz.myq.data.model.Verdict
 import com.martypaz.myq.data.streaming.StreamingApp
+import com.martypaz.myq.ui.components.LeadTimeDropdown
 import com.martypaz.myq.ui.components.glass
 import com.martypaz.myq.ui.theme.SkyPalette
-
-private val LEAD_HOUR_OPTIONS = listOf(1, 2, 4, 24)
 
 /** Everything the user can do to a programme, gathered in one D-pad overlay. */
 data class ProgrammeDialogState(
     val programme: Programme,
-    val existingLeadHours: Int? = null,
+    val existingLeadMinutes: Int? = null,
     val verdict: Verdict = Verdict.NONE,
     val isRecording: Boolean = false,
     val isSeriesRecording: Boolean = false,
@@ -109,20 +108,16 @@ fun ProgrammeDialog(
             }
 
             Section("Remind me") {
-                LEAD_HOUR_OPTIONS.forEachIndexed { index, hours ->
-                    Chip(
-                        label = if (hours == 1) "1 hour" else "$hours hours",
-                        emphasised = hours == state.existingLeadHours,
-                        modifier = if (index == 0 && state.streamingApp == null) {
-                            Modifier.focusRequester(firstAction)
-                        } else {
-                            Modifier
-                        },
-                    ) { onSetReminder(programme, hours) }
-                }
-                if (state.existingLeadHours != null) {
-                    Chip(label = "Clear") { onRemoveReminder(programme.id) }
-                }
+                LeadTimeDropdown(
+                    selectedMinutes = state.existingLeadMinutes,
+                    onSelect = { minutes -> onSetReminder(programme, minutes) },
+                    onClear = { onRemoveReminder(programme.id) },
+                    modifier = if (state.streamingApp == null) {
+                        Modifier.focusRequester(firstAction)
+                    } else {
+                        Modifier
+                    },
+                )
             }
 
             Section("Record") {
@@ -278,7 +273,7 @@ private fun MetaLine(state: ProgrammeDialogState) {
             Newness.NEW_SEASON -> Badge("NEW SEASON", SkyPalette.AccentBadge)
             else -> Unit
         }
-        if (state.existingLeadHours != null) Badge("⏰ REMINDER SET", SkyPalette.ReminderBadge)
+        if (state.existingLeadMinutes != null) Badge("⏰ REMINDER SET", SkyPalette.ReminderBadge)
         if (state.isRecording || state.isSeriesRecording) Badge("● RECORDING", SkyPalette.RecordBadge)
     }
 }

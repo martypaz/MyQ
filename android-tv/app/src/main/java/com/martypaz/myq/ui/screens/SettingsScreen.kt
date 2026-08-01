@@ -39,9 +39,8 @@ import androidx.compose.ui.platform.LocalContext
 import com.martypaz.myq.data.epg.EpgRepository
 import com.martypaz.myq.data.prefs.Profile
 import com.martypaz.myq.ui.theme.SkyPalette
+import com.martypaz.myq.ui.components.LeadTimeDropdown
 import com.martypaz.myq.ui.components.glass
-
-private val LEAD_HOUR_OPTIONS = listOf(1, 2, 4, 24)
 
 /**
  * MyQ merges two listings sources, and either can fail on its own. Saying
@@ -120,15 +119,14 @@ fun SettingsScreen(
             )
         }
 
-        SettingBlock("Default reminder", "Pre-selected when you set a new reminder.") {
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                LEAD_HOUR_OPTIONS.forEach { hours ->
-                    SettingChip(
-                        label = if (hours == 1) "1 hour" else "$hours hours",
-                        emphasised = hours == profile.defaultLeadHours,
-                    ) { onDefaultLeadChange(hours) }
-                }
-            }
+        SettingBlock(
+            "Default reminder",
+            "Used when a recording sets its own reminder, and pre-selected for a new one.",
+        ) {
+            LeadTimeDropdown(
+                selectedMinutes = profile.defaultLeadMinutes,
+                onSelect = onDefaultLeadChange,
+            )
         }
 
         SettingBlock("Listings", describeSources(isLiveData, sources)) {

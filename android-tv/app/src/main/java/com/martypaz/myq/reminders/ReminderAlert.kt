@@ -3,6 +3,7 @@ package com.martypaz.myq.reminders
 import android.content.Context
 import android.content.Intent
 import com.martypaz.myq.data.model.Reminder
+import com.martypaz.myq.data.model.formatLeadTime
 
 /**
  * The payload a fired reminder carries from the alarm through to whatever
@@ -15,7 +16,7 @@ data class ReminderAlert(
     val title: String,
     val channelName: String,
     val startMillis: Long,
-    val leadHours: Int,
+    val leadMinutes: Int,
 ) {
     /** Stable per programme, so a re-fire replaces rather than stacks. */
     val notificationId: Int get() = programmeId.hashCode()
@@ -25,7 +26,7 @@ data class ReminderAlert(
         putExtra(EXTRA_TITLE, title)
         putExtra(EXTRA_CHANNEL, channelName)
         putExtra(EXTRA_START_MILLIS, startMillis)
-        putExtra(EXTRA_LEAD_HOURS, leadHours)
+        putExtra(EXTRA_LEAD_MINUTES, leadMinutes)
     }
 
     companion object {
@@ -33,14 +34,14 @@ data class ReminderAlert(
         const val EXTRA_TITLE = "title"
         const val EXTRA_CHANNEL = "channel"
         const val EXTRA_START_MILLIS = "startMillis"
-        const val EXTRA_LEAD_HOURS = "leadHours"
+        const val EXTRA_LEAD_MINUTES = "leadMinutes"
 
         fun from(reminder: Reminder) = ReminderAlert(
             programmeId = reminder.programmeId,
             title = reminder.title,
             channelName = reminder.channelName,
             startMillis = reminder.startMillis,
-            leadHours = reminder.leadHours,
+            leadMinutes = reminder.effectiveLeadMinutes,
         )
 
         /** Null when the intent is missing the one field we cannot invent. */
@@ -51,15 +52,14 @@ data class ReminderAlert(
                 title = title,
                 channelName = intent.getStringExtra(EXTRA_CHANNEL).orEmpty(),
                 startMillis = intent.getLongExtra(EXTRA_START_MILLIS, 0L),
-                leadHours = intent.getIntExtra(EXTRA_LEAD_HOURS, 1),
+                leadMinutes = intent.getIntExtra(EXTRA_LEAD_MINUTES, Reminder.DEFAULT_LEAD_MINUTES),
             )
         }
     }
 }
 
-/** "in 1 hour" / "in 4 hours" — how far ahead of the programme we are. */
-fun ReminderAlert.leadLabel(): String =
-    if (leadHours == 1) "in 1 hour" else "in $leadHours hours"
+/** "in 5 minutes" / "in 2 hours" — how far ahead of the programme we are. */
+fun ReminderAlert.leadLabel(): String = "in ${formatLeadTime(leadMinutes)}"
 
 internal fun Context.reminderAlertIntent(alert: ReminderAlert, target: Class<*>): Intent =
     alert.writeTo(Intent(this, target))

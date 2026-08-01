@@ -44,7 +44,7 @@ class ReminderScheduler(private val context: Context) {
             title = "Test reminder",
             channelName = "MyQ",
             startMillis = System.currentTimeMillis() + inMillis + ONE_HOUR_MILLIS,
-            leadHours = 1,
+            leadMinutes = Reminder.MINUTES_PER_HOUR,
         )
         schedule(reminder)
         return reminder

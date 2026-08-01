@@ -16,10 +16,10 @@ class ReminderMigrationTest {
         title: String = "Gogglebox",
         channel: String = "Channel 4",
         start: Long = nineOClock,
-        leadHours: Int = 2,
+        leadMinutes: Int = 120,
     ) = Reminder(
         programmeId = id, title = title, channelName = channel,
-        startMillis = start, leadHours = leadHours,
+        startMillis = start, leadMinutes = leadMinutes,
     )
 
     private fun programme(
@@ -45,11 +45,11 @@ class ReminderMigrationTest {
     @Test
     fun `carries the reminder's own settings across untouched`() {
         val remaps = remapReminders(
-            listOf(reminder("tvmaze-1", leadHours = 24)),
+            listOf(reminder("tvmaze-1", leadMinutes = 1440)),
             listOf(programme("freeview-1")),
         )
         val moved = remaps.single().to
-        assertEquals(24, moved.leadHours)
+        assertEquals(1440, moved.leadMinutes)
         assertEquals("Gogglebox", moved.title)
     }
 

@@ -92,7 +92,7 @@ fun HomeScreen(viewModel: HomeViewModel) {
                         isLiveData = state.isLiveData,
                         sources = state.sources,
                         onNameChange = viewModel::setName,
-                        onDefaultLeadChange = viewModel::setDefaultLeadHours,
+                        onDefaultLeadChange = viewModel::setDefaultLeadMinutes,
                         onRefresh = viewModel::refresh,
                         onClearTaste = viewModel::clearTaste,
                         isDeveloperMode = state.isDeveloperMode,

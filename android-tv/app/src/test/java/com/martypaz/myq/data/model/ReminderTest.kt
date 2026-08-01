@@ -11,7 +11,7 @@ class ReminderTest {
         val start = 100 * hourMillis
         val reminder = Reminder(
             programmeId = "p1", title = "T", channelName = "BBC One",
-            startMillis = start, leadHours = 4,
+            startMillis = start, leadMinutes = 4 * 60,
         )
         assertEquals(start - 4 * hourMillis, reminder.fireAtMillis)
     }

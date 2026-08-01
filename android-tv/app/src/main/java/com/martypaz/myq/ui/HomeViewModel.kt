@@ -207,7 +207,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         _uiState.value = state.copy(
             dialog = ProgrammeDialogState(
                 programme = programme,
-                existingLeadHours = state.reminders[programme.id]?.leadHours,
+                existingLeadMinutes = state.reminders[programme.id]?.effectiveLeadMinutes,
                 verdict = state.opinions.firstOrNull { it.title == programme.title }?.verdict ?: Verdict.NONE,
                 isRecording = state.isRecording(programme.id),
                 isSeriesRecording = state.isSeriesRecording(programme.title),
@@ -233,14 +233,14 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun setReminder(programme: Programme, leadHours: Int) {
+    fun setReminder(programme: Programme, leadMinutes: Int) {
         viewModelScope.launch {
             val reminder = Reminder(
                 programmeId = programme.id,
                 title = programme.title,
                 channelName = programme.channelName,
                 startMillis = programme.startMillis,
-                leadHours = leadHours,
+                leadMinutes = leadMinutes,
             )
             app.reminderStore.upsert(reminder)
             app.reminderScheduler.schedule(reminder)
@@ -286,7 +286,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                 ),
             )
             if (_uiState.value.reminders[programme.id] == null) {
-                setReminder(programme, _uiState.value.profile.defaultLeadHours)
+                setReminder(programme, _uiState.value.profile.defaultLeadMinutes)
             }
             app.recommender.record(programme, Recommender.Signal.REMINDER_SET)
             _uiState.value = _uiState.value.copy(dialog = null)
@@ -314,8 +314,8 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch { app.profileStore.setFirstName(name) }
     }
 
-    fun setDefaultLeadHours(hours: Int) {
-        viewModelScope.launch { app.profileStore.setDefaultLeadHours(hours) }
+    fun setDefaultLeadMinutes(minutes: Int) {
+        viewModelScope.launch { app.profileStore.setDefaultLeadMinutes(minutes) }
     }
 
     fun clearTaste() {
@@ -326,9 +326,9 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     private fun refreshDialog(dialog: ProgrammeDialogState, bundle: Bundle): ProgrammeDialogState =
         dialog.copy(
-            existingLeadHours = bundle.reminders.firstOrNull {
+            existingLeadMinutes = bundle.reminders.firstOrNull {
                 it.programmeId == dialog.programme.id
-            }?.leadHours,
+            }?.effectiveLeadMinutes,
             verdict = bundle.taste.verdictFor(dialog.programme.title),
             isRecording = bundle.recordings.any { it.programmeId == dialog.programme.id },
             isSeriesRecording = bundle.recordings.any {
