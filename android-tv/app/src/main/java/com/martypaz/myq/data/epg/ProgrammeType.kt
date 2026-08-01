@@ -57,3 +57,17 @@ private val FILM_MINUTES = 70..195
 private val FILM_CHANNEL_MINUTES = 70..240
 
 private const val FEATURE_MINUTES = 80
+
+/**
+ * Whether this programme is on air right now.
+ *
+ * Where the runtime is unknown, a slot is assumed to run an hour — long enough
+ * to cover most programmes and short enough that a stale listing does not offer
+ * to tune to something that finished this morning.
+ */
+fun Programme.isOnNow(now: Long = System.currentTimeMillis()): Boolean {
+    val length = (runtimeMinutes ?: ASSUMED_RUNTIME_MINUTES) * 60_000L
+    return now >= startMillis && now < startMillis + length
+}
+
+private const val ASSUMED_RUNTIME_MINUTES = 60

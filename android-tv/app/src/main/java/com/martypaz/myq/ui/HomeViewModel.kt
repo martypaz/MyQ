@@ -17,12 +17,15 @@ import com.martypaz.myq.data.model.Reminder
 import com.martypaz.myq.data.model.Verdict
 import com.martypaz.myq.data.epg.EpgRepository
 import com.martypaz.myq.data.epg.isLikelyFilm
+import com.martypaz.myq.data.epg.isOnNow
 import com.martypaz.myq.data.epg.isScheduleFiller
 import com.martypaz.myq.data.prefs.Profile
 import com.martypaz.myq.data.prefs.TasteProfile
 import com.martypaz.myq.data.streaming.StreamingApp
 import com.martypaz.myq.data.streaming.openInStreamingApp
 import com.martypaz.myq.data.streaming.streamingAppFor
+import com.martypaz.myq.data.tv.TvChannel
+import com.martypaz.myq.data.tv.tuneTo
 import com.martypaz.myq.recs.Recommender
 import com.martypaz.myq.reminders.ReminderReadiness
 import com.martypaz.myq.reminders.checkReminderReadiness
@@ -254,8 +257,16 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                 isRecording = state.isRecording(programme.id),
                 isSeriesRecording = state.isSeriesRecording(programme.title),
                 streamingApp = streamingAppFor(programme.channelName),
+                tunableChannel = app.tvLineup.channelFor(programme.channelName),
+                isOnNow = programme.isOnNow(),
             ),
         )
+    }
+
+    /** Switches the television to a channel the box actually receives. */
+    fun tuneTo(channel: TvChannel) {
+        getApplication<Application>().tuneTo(channel)
+        _uiState.value = _uiState.value.copy(dialog = null)
     }
 
     fun dismissDialog() {

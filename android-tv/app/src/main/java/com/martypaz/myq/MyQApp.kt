@@ -2,6 +2,12 @@ package com.martypaz.myq
 
 import android.app.Application
 import com.martypaz.myq.data.epg.EpgRepository
+import com.martypaz.myq.data.epg.FreeviewEpgApi
+import com.martypaz.myq.data.epg.FreeviewEpgSource
+import com.martypaz.myq.data.epg.TvMazeApi
+import com.martypaz.myq.data.epg.TvMazeSource
+import com.martypaz.myq.data.tv.DeviceTvSource
+import com.martypaz.myq.data.tv.TvLineup
 import com.martypaz.myq.data.prefs.ProfileStore
 import com.martypaz.myq.data.prefs.RecordingStore
 import com.martypaz.myq.data.prefs.ReminderStore
@@ -17,7 +23,18 @@ import kotlinx.coroutines.launch
 /** Application-scoped service container (deliberately framework-free DI). */
 class MyQApp : Application() {
 
-    val epgRepository by lazy { EpgRepository() }
+    val tvLineup by lazy { TvLineup(this) }
+
+    val epgRepository by lazy {
+        EpgRepository(
+            listOf(
+                FreeviewEpgSource(FreeviewEpgApi(cacheDir = cacheDir)),
+                DeviceTvSource(this, tvLineup),
+                TvMazeSource(TvMazeApi()),
+            ),
+        )
+    }
+
     val reminderStore by lazy { ReminderStore(this) }
     val tasteStore by lazy { TasteStore(this) }
     val recordingStore by lazy { RecordingStore(this) }

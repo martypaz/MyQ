@@ -52,13 +52,14 @@ private fun describeSources(isLiveData: Boolean, sources: Set<EpgRepository.Sour
     val names = sources.sortedBy { it.ordinal }.map {
         when (it) {
             EpgRepository.Source.FREEVIEW_EPG -> "Freeview EPG (full listings)"
+            EpgRepository.Source.DEVICE_TUNER -> "this TV's tuner"
             EpgRepository.Source.TVMAZE -> "TVmaze (genres and artwork)"
         }
     }
-    return when (names.size) {
-        2 -> "Live listings from ${names[0]} and ${names[1]}."
-        1 -> "Live listings from ${names[0]}. The other source did not answer."
-        else -> "Live listings loaded."
+    return when {
+        names.isEmpty() -> "Live listings loaded."
+        names.size == 1 -> "Live listings from ${names[0]}. The other sources did not answer."
+        else -> "Live listings from " + names.dropLast(1).joinToString(", ") + " and ${names.last()}."
     }
 }
 

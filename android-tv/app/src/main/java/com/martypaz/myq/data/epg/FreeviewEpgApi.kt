@@ -70,3 +70,10 @@ class FreeviewEpgApi(
             .build()
     }
 }
+
+/** [FreeviewEpgApi] as a uniform listings source. */
+class FreeviewEpgSource(private val api: FreeviewEpgApi) : EpgSource {
+    override val source = EpgRepository.Source.FREEVIEW_EPG
+    override suspend fun listings(fromMillis: Long, toMillis: Long): List<Programme> =
+        runCatching { api.listings(fromMillis, toMillis) }.getOrDefault(emptyList())
+}

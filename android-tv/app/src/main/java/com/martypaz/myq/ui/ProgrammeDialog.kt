@@ -42,6 +42,7 @@ import com.martypaz.myq.data.model.Newness
 import com.martypaz.myq.data.model.Programme
 import com.martypaz.myq.data.model.Verdict
 import com.martypaz.myq.data.streaming.StreamingApp
+import com.martypaz.myq.data.tv.TvChannel
 import com.martypaz.myq.ui.components.LeadTimeDropdown
 import com.martypaz.myq.ui.components.glass
 import com.martypaz.myq.ui.theme.SkyPalette
@@ -53,6 +54,10 @@ data class ProgrammeDialogState(
     val verdict: Verdict = Verdict.NONE,
     val isRecording: Boolean = false,
     val isSeriesRecording: Boolean = false,
+    /** The tuner channel carrying this programme, when the box receives it. */
+    val tunableChannel: TvChannel? = null,
+    /** True while the programme is actually on, which is when tuning helps. */
+    val isOnNow: Boolean = false,
     /** The service carrying this channel, when MyQ knows of one. */
     val streamingApp: StreamingApp? = null,
 )
@@ -67,6 +72,7 @@ data class ProgrammeDialogState(
 fun ProgrammeDialog(
     state: ProgrammeDialogState,
     onOpenInApp: (Programme, StreamingApp) -> Unit,
+    onTune: (TvChannel) -> Unit,
     onSetReminder: (Programme, Int) -> Unit,
     onRemoveReminder: (String) -> Unit,
     onSetVerdict: (Programme, Verdict) -> Unit,
@@ -96,14 +102,33 @@ fun ProgrammeDialog(
         ) {
             Header(state)
 
-            state.streamingApp?.let { app ->
+            // Tuning is only offered while the programme is actually on. At
+            // any other time the channel would be showing something else, and
+            // a reminder is the right answer instead.
+            val tunable = state.tunableChannel.takeIf { state.isOnNow }
+            if (tunable != null || state.streamingApp != null) {
                 Section("Watch") {
-                    Chip(
-                        label = "▶  Open in ${app.displayName}",
-                        emphasised = true,
-                        accent = SkyPalette.AccentBadge,
-                        modifier = Modifier.focusRequester(firstAction),
-                    ) { onOpenInApp(programme, app) }
+                    tunable?.let { channel ->
+                        val number = channel.number?.let { " ($it)" }.orEmpty()
+                        Chip(
+                            label = "▶  Switch to ${channel.displayName}$number",
+                            emphasised = true,
+                            accent = SkyPalette.AccentBadge,
+                            modifier = Modifier.focusRequester(firstAction),
+                        ) { onTune(channel) }
+                    }
+                    state.streamingApp?.let { app ->
+                        Chip(
+                            label = "▶  Open in ${app.displayName}",
+                            emphasised = tunable == null,
+                            accent = SkyPalette.AccentBadge,
+                            modifier = if (tunable == null) {
+                                Modifier.focusRequester(firstAction)
+                            } else {
+                                Modifier
+                            },
+                        ) { onOpenInApp(programme, app) }
+                    }
                 }
             }
 
@@ -112,7 +137,7 @@ fun ProgrammeDialog(
                     selectedMinutes = state.existingLeadMinutes,
                     onSelect = { minutes -> onSetReminder(programme, minutes) },
                     onClear = { onRemoveReminder(programme.id) },
-                    modifier = if (state.streamingApp == null) {
+                    modifier = if (state.streamingApp == null && state.tunableChannel == null) {
                         Modifier.focusRequester(firstAction)
                     } else {
                         Modifier

@@ -13,6 +13,9 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.time.LocalDate
 import java.time.OffsetDateTime
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import java.time.temporal.ChronoUnit
 
 /**
@@ -139,3 +142,35 @@ data class TvMazeChannel(val name: String? = null)
 
 @Serializable
 data class TvMazeImage(val medium: String? = null, val original: String? = null)
+
+/**
+ * [TvMazeApi] as a uniform listings source.
+ *
+ * TVmaze is queried a day at a time, so the window is turned into one request
+ * per day and those run concurrently — serially, the wait grew with the window.
+ */
+class TvMazeSource(private val api: TvMazeApi) : EpgSource {
+
+    override val source = EpgRepository.Source.TVMAZE
+
+    override suspend fun listings(fromMillis: Long, toMillis: Long): List<Programme> = coroutineScope {
+        val days = ((toMillis - fromMillis) / MILLIS_PER_DAY).toInt().coerceIn(1, MAX_DAYS)
+        val today = LocalDate.now()
+        (0 until days)
+            .map { offset ->
+                async {
+                    runCatching { api.schedule(today.plusDays(offset.toLong())) }
+                        .getOrDefault(emptyList())
+                }
+            }
+            .awaitAll()
+            .flatten()
+            .distinctBy { it.id }
+            .filter { it.startMillis in fromMillis..toMillis }
+    }
+
+    private companion object {
+        const val MILLIS_PER_DAY = 24L * 60L * 60L * 1000L
+        const val MAX_DAYS = 21
+    }
+}

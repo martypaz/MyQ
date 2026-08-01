@@ -15,6 +15,11 @@
     <!-- Android TV files notifications away in the launcher; only a full-screen
          intent puts a reminder in front of someone watching television. -->
     <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+    <!-- Reads the line-up this box is actually tuned to, which is the only
+         source that knows its region, its channel numbers, and which channels
+         its aerial receives. Runtime permission; refusal leaves the national
+         guide in place. -->
+    <uses-permission android:name="android.permission.READ_TV_LISTINGS" />
 
     <!--
         Android 11+ hides other packages unless they are declared here. Without
