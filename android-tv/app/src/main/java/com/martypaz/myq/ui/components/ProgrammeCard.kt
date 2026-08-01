@@ -92,21 +92,10 @@ fun ProgrammeCard(
                 ),
         )
 
-        // Channel chip, top-left — a frosted ident, mirroring Sky Q's tiles.
-        BasicText(
-            text = programme.channelName,
-            style = TextStyle(
-                color = SkyPalette.TextPrimary,
-                fontSize = 11.sp,
-                fontWeight = FontWeight.SemiBold,
-            ),
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .padding(8.dp)
-                .glass(shape = RoundedCornerShape(5.dp))
-                .padding(horizontal = 7.dp, vertical = 3.dp),
+        // Channel ident, top-left — a frosted chip, mirroring Sky Q's tiles.
+        ChannelChip(
+            channelName = programme.channelName,
+            modifier = Modifier.align(Alignment.TopStart).padding(8.dp),
         )
 
         val badge = when {
