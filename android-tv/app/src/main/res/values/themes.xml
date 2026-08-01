@@ -1,5 +1,5 @@
 <resources>
-    <style name="Theme.FreeviewGuide" parent="android:Theme.Material.NoActionBar">
+    <style name="Theme.MyQ" parent="android:Theme.Material.NoActionBar">
         <item name="android:windowBackground">@drawable/window_background</item>
         <item name="android:colorBackground">#0A1633</item>
     </style>

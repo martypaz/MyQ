@@ -1,6 +1,7 @@
-# Freeview Guide — Android TV
+# MyQ — Android TV
 
-An Android TV app that gathers **new programmes across UK Freeview and streaming
+**MyQ** (a play on Sky Q — it even echoes the "My Q" section in Sky's own UI) is
+an Android TV app that gathers **new programmes across UK Freeview and streaming
 channels**, lets you set a **reminder X hours before a programme starts**, learns
 what you like to build a **"For You"** rail, and wears a **Sky Q-inspired look**:
 deep navy gradient, hero info panel at the top, horizontal card rails with a

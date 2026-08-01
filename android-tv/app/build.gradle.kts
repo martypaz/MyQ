@@ -6,11 +6,11 @@ plugins {
 }
 
 android {
-    namespace = "com.martypaz.freeviewguide"
+    namespace = "com.martypaz.myq"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.martypaz.freeviewguide"
+        applicationId = "com.martypaz.myq"
         minSdk = 26
         targetSdk = 34
         versionCode = 1
@@ -59,4 +59,6 @@ dependencies {
 
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("io.coil-kt:coil-compose:2.7.0")
+
+    testImplementation("junit:junit:4.13.2")
 }

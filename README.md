@@ -1,3 +1,5 @@
+> 📺 **This fork is home to [MyQ](android-tv/README.md)** — an Android TV guide for new UK Freeview and streaming programmes, with reminders, a learning "For You" rail, and a Sky Q-inspired look. **The MyQ app lives in [`android-tv/`](android-tv/)**; everything below is the upstream Open Design project this repo was forked from.
+
 <h1 align="center">Open Design: The open-source Claude Design alternative</h1>
 
 > 🔥 **Open Design 0.9.0 is here: create without the setup.** The [official Model Router](https://open-design.ai/amr) is built right into the app — no extra configuration, no CLI to install, no API key to prepare. Just open the app, sign in, and start designing and creating right away. [Download 0.9.0](https://github.com/nexu-io/open-design/releases) · [Join the discussion](https://github.com/nexu-io/open-design/discussions/3524)
