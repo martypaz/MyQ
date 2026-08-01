@@ -13,6 +13,7 @@ import com.martypaz.myq.data.model.Rail
 import com.martypaz.myq.data.model.RecordEntry
 import com.martypaz.myq.data.model.Reminder
 import com.martypaz.myq.data.model.Verdict
+import com.martypaz.myq.data.epg.EpgRepository
 import com.martypaz.myq.data.prefs.Profile
 import com.martypaz.myq.data.prefs.TasteProfile
 import com.martypaz.myq.data.streaming.StreamingApp
@@ -36,6 +37,8 @@ import java.time.ZoneId
 data class HomeUiState(
     val isLoading: Boolean = true,
     val isLiveData: Boolean = true,
+    /** Which listings sources answered on the last load. */
+    val sources: Set<EpgRepository.Source> = emptySet(),
     val showWelcome: Boolean = true,
     val profile: Profile = Profile(),
     val destination: NavDestination = NavDestination.HOME,
@@ -105,7 +108,11 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             _uiState.value = _uiState.value.copy(isLoading = true)
             val result = app.epgRepository.load()
             programmes.value = result.programmes
-            _uiState.value = _uiState.value.copy(isLoading = false, isLiveData = result.isLive)
+            _uiState.value = _uiState.value.copy(
+                isLoading = false,
+                isLiveData = result.isLive,
+                sources = result.sources,
+            )
         }
     }
 

@@ -90,6 +90,7 @@ fun HomeScreen(viewModel: HomeViewModel) {
                     NavDestination.SETTINGS -> SettingsScreen(
                         profile = state.profile,
                         isLiveData = state.isLiveData,
+                        sources = state.sources,
                         onNameChange = viewModel::setName,
                         onDefaultLeadChange = viewModel::setDefaultLeadHours,
                         onRefresh = viewModel::refresh,

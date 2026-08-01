@@ -30,16 +30,40 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.martypaz.myq.data.epg.EpgRepository
 import com.martypaz.myq.data.prefs.Profile
 import com.martypaz.myq.ui.theme.SkyPalette
 import com.martypaz.myq.ui.components.glass
 
 private val LEAD_HOUR_OPTIONS = listOf(1, 2, 4, 24)
 
+/**
+ * MyQ merges two listings sources, and either can fail on its own. Saying
+ * which answered turns "why is this channel missing?" into something the
+ * viewer can actually see.
+ */
+private fun describeSources(isLiveData: Boolean, sources: Set<EpgRepository.Source>): String {
+    if (!isLiveData) {
+        return "Offline — showing sample listings. Check the TV's network connection."
+    }
+    val names = sources.sortedBy { it.ordinal }.map {
+        when (it) {
+            EpgRepository.Source.FREEVIEW_EPG -> "Freeview EPG (full listings)"
+            EpgRepository.Source.TVMAZE -> "TVmaze (genres and artwork)"
+        }
+    }
+    return when (names.size) {
+        2 -> "Live listings from ${names[0]} and ${names[1]}."
+        1 -> "Live listings from ${names[0]}. The other source did not answer."
+        else -> "Live listings loaded."
+    }
+}
+
 @Composable
 fun SettingsScreen(
     profile: Profile,
     isLiveData: Boolean,
+    sources: Set<EpgRepository.Source>,
     onNameChange: (String) -> Unit,
     onDefaultLeadChange: (Int) -> Unit,
     onRefresh: () -> Unit,
@@ -99,14 +123,7 @@ fun SettingsScreen(
             }
         }
 
-        SettingBlock(
-            "Listings",
-            if (isLiveData) {
-                "Live listings loaded from TVmaze."
-            } else {
-                "Offline — showing sample listings. Check the TV's network connection."
-            },
-        ) {
+        SettingBlock("Listings", describeSources(isLiveData, sources)) {
             SettingChip(label = "Refresh listings") { onRefresh() }
         }
 
