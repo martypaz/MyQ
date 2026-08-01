@@ -46,7 +46,9 @@ upstream Open Design project this repo was forked from — you can ignore it.
 ## 3. Building
 
 **From Android Studio:** open `android-tv/`, let the Gradle sync finish
-(first sync downloads Gradle 8.9 + dependencies, a few minutes), then
+(first sync downloads Gradle 8.14.5 + dependencies, and can take 10-20
+minutes on Windows — Defender scanning the Gradle cache is the usual
+bottleneck; excluding `~/.gradle` speeds up every later build), then
 **Build → Make Project**. Green hammer = good.
 
 **From the command line:**
