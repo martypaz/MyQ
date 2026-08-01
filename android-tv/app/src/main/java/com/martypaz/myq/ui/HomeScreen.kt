@@ -106,6 +106,7 @@ fun HomeScreen(viewModel: HomeViewModel) {
         state.dialog?.let { dialog ->
             ProgrammeDialog(
                 state = dialog,
+                onOpenInApp = viewModel::openInStreamingApp,
                 onSetReminder = viewModel::setReminder,
                 onRemoveReminder = viewModel::removeReminder,
                 onSetVerdict = viewModel::setVerdict,

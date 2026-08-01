@@ -15,6 +15,9 @@ import com.martypaz.myq.data.model.Reminder
 import com.martypaz.myq.data.model.Verdict
 import com.martypaz.myq.data.prefs.Profile
 import com.martypaz.myq.data.prefs.TasteProfile
+import com.martypaz.myq.data.streaming.StreamingApp
+import com.martypaz.myq.data.streaming.openInStreamingApp
+import com.martypaz.myq.data.streaming.streamingAppFor
 import com.martypaz.myq.recs.Recommender
 import com.martypaz.myq.ui.components.NavDestination
 import com.martypaz.myq.ui.screens.SeriesOpinion
@@ -155,12 +158,26 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                 verdict = state.opinions.firstOrNull { it.title == programme.title }?.verdict ?: Verdict.NONE,
                 isRecording = state.isRecording(programme.id),
                 isSeriesRecording = state.isSeriesRecording(programme.title),
+                streamingApp = streamingAppFor(programme.channelName),
             ),
         )
     }
 
     fun dismissDialog() {
         _uiState.value = _uiState.value.copy(dialog = null)
+    }
+
+    /**
+     * Leaves MyQ for the service carrying this programme. Wanting to watch
+     * something now is the strongest taste signal there is, so it counts the
+     * same as setting a reminder.
+     */
+    fun openInStreamingApp(programme: Programme, target: StreamingApp) {
+        viewModelScope.launch {
+            app.recommender.record(programme, Recommender.Signal.REMINDER_SET)
+            getApplication<Application>().openInStreamingApp(target, programme.title)
+            _uiState.value = _uiState.value.copy(dialog = null)
+        }
     }
 
     fun setReminder(programme: Programme, leadHours: Int) {
