@@ -97,6 +97,8 @@ fun HomeScreen(viewModel: HomeViewModel) {
                         onRefresh = viewModel::refresh,
                         onClearTaste = viewModel::clearTaste,
                         isDeveloperMode = state.isDeveloperMode,
+                        readiness = state.reminderReadiness,
+                        developerMessage = state.developerMessage,
                         onTestReminder = viewModel::fireTestReminder,
                     )
                 }

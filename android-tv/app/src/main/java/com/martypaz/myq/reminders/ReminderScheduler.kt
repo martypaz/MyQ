@@ -16,21 +16,41 @@ class ReminderScheduler(private val context: Context) {
 
     private val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
 
-    fun schedule(reminder: Reminder) {
+    fun schedule(reminder: Reminder): Boolean {
         val fireAt = reminder.fireAtMillis
-        if (fireAt <= System.currentTimeMillis()) return
+        if (fireAt <= System.currentTimeMillis()) return false
 
         val pending = pendingIntentFor(reminder.programmeId) {
             ReminderAlert.from(reminder).writeTo(this)
         }
 
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S || alarmManager.canScheduleExactAlarms()) {
-            alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, fireAt, pending)
-        } else {
-            // Exact alarms denied by the user: an inexact alarm still lands close enough.
-            alarmManager.setWindow(AlarmManager.RTC_WAKEUP, fireAt, 10L * 60L * 1000L, pending)
+        // setAlarmClock needs no permission and is always exact, so it is the
+        // primary path. SCHEDULE_EXACT_ALARM is denied by default for anything
+        // targeting Android 13 or later, and the inexact fallback this used to
+        // take carried a ten-minute window — a reminder for a programme at
+        // nine could arrive at ten past, which is not a reminder.
+        runCatching {
+            alarmManager.setAlarmClock(
+                AlarmManager.AlarmClockInfo(fireAt, showIntent()),
+                pending,
+            )
+        }.recover {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S || alarmManager.canScheduleExactAlarms()) {
+                alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, fireAt, pending)
+            } else {
+                alarmManager.setWindow(AlarmManager.RTC_WAKEUP, fireAt, INEXACT_WINDOW_MILLIS, pending)
+            }
         }
+        return true
     }
+
+    /** Where the system sends someone who taps the pending alarm. */
+    private fun showIntent(): PendingIntent = PendingIntent.getActivity(
+        context,
+        0,
+        Intent(context, com.martypaz.myq.MainActivity::class.java),
+        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+    )
 
     /**
      * Arms a reminder a few seconds out through the ordinary path — real
@@ -73,5 +93,6 @@ class ReminderScheduler(private val context: Context) {
     private companion object {
         const val TEST_DELAY_MILLIS = 5_000L
         const val ONE_HOUR_MILLIS = 60L * 60L * 1000L
+        const val INEXACT_WINDOW_MILLIS = 10L * 60L * 1000L
     }
 }

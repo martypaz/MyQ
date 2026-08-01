@@ -24,6 +24,8 @@ import com.martypaz.myq.data.streaming.StreamingApp
 import com.martypaz.myq.data.streaming.openInStreamingApp
 import com.martypaz.myq.data.streaming.streamingAppFor
 import com.martypaz.myq.recs.Recommender
+import com.martypaz.myq.reminders.ReminderReadiness
+import com.martypaz.myq.reminders.checkReminderReadiness
 import com.martypaz.myq.reminders.migrateReminderIds
 import com.martypaz.myq.ui.components.NavDestination
 import com.martypaz.myq.ui.screens.SeriesOpinion
@@ -61,6 +63,10 @@ data class HomeUiState(
     val dialog: ProgrammeDialogState? = null,
     /** Gates the developer tools in Settings. */
     val isDeveloperMode: Boolean = false,
+    /** Permission state behind reminders, refreshed when Settings is shown. */
+    val reminderReadiness: ReminderReadiness? = null,
+    /** One-off feedback from a developer action. */
+    val developerMessage: String? = null,
 ) {
     fun isRecording(programmeId: String) = recordings.any { it.programmeId == programmeId }
     fun isSeriesRecording(title: String) = recordings.any { it.title == title && it.isSeries }
@@ -77,7 +83,10 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     private var browseSignalJob: Job? = null
 
     init {
-        _uiState.value = _uiState.value.copy(isDeveloperMode = isDeveloperMode(application))
+        _uiState.value = _uiState.value.copy(
+            isDeveloperMode = isDeveloperMode(application),
+            reminderReadiness = checkReminderReadiness(application),
+        )
         refresh()
 
         // The profile is collected on its own rather than through the bundle
@@ -155,7 +164,29 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
      * away from MyQ once it is armed and the alert should still arrive.
      */
     fun fireTestReminder() {
+        val readiness = checkReminderReadiness(getApplication())
         app.reminderScheduler.scheduleTest()
+
+        // A test that fails silently is worse than no test: the whole point is
+        // to find out which of the three permissions is in the way.
+        _uiState.value = _uiState.value.copy(
+            reminderReadiness = readiness,
+            developerMessage = if (readiness.isReady) {
+                "Armed. The alert should appear in about five seconds — leave MyQ now to check it still does."
+            } else {
+                "Armed, but it will not be seen: ${readiness.blockers.first()}"
+            },
+        )
+    }
+
+    fun refreshReminderReadiness() {
+        _uiState.value = _uiState.value.copy(
+            reminderReadiness = checkReminderReadiness(getApplication()),
+        )
+    }
+
+    fun dismissDeveloperMessage() {
+        _uiState.value = _uiState.value.copy(developerMessage = null)
     }
 
     /**

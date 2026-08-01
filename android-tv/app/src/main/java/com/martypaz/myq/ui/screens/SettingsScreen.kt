@@ -29,14 +29,12 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import android.app.NotificationManager
-import android.content.Intent
-import android.net.Uri
-import android.os.Build
-import android.provider.Settings
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.sp
 import com.martypaz.myq.data.epg.EpgRepository
+import com.martypaz.myq.reminders.ReminderReadiness
+import com.martypaz.myq.reminders.openFullScreenAlertSettings
+import com.martypaz.myq.reminders.openNotificationSettings
 import com.martypaz.myq.data.prefs.Profile
 import com.martypaz.myq.ui.theme.SkyPalette
 import com.martypaz.myq.ui.components.LeadTimeDropdown
@@ -75,6 +73,8 @@ fun SettingsScreen(
     onClearTaste: () -> Unit,
     isDeveloperMode: Boolean = false,
     onTestReminder: () -> Unit = {},
+    readiness: ReminderReadiness? = null,
+    developerMessage: String? = null,
 ) {
     Column(
         modifier = Modifier
@@ -144,39 +144,24 @@ fun SettingsScreen(
         if (isDeveloperMode) {
             val context = LocalContext.current
             SettingBlock(
-                "Developer",
-                "Fires a reminder five seconds from now through the real alarm and " +
-                    "full-screen alert. Leave MyQ once it is armed to check it still arrives.",
+                "Reminders",
+                developerMessage
+                    ?: readiness?.blockers?.firstOrNull()
+                    ?: "Everything a reminder needs is allowed.",
             ) {
                 SettingChip(label = "Test reminder in 5s") { onTestReminder() }
-                if (!canShowFullScreenAlerts(context)) {
-                    // Android 14 revokes this for anything that is not a
-                    // dialler or alarm clock, and the reminder silently
-                    // degrades to a notification nobody sees on a television.
+                if (readiness != null && !readiness.notificationsEnabled) {
+                    SettingChip(label = "Turn on notifications") {
+                        context.openNotificationSettings()
+                    }
+                }
+                if (readiness != null && !readiness.fullScreenAlertsAllowed) {
                     SettingChip(label = "Allow full-screen alerts") {
-                        context.openFullScreenIntentSettings()
+                        context.openFullScreenAlertSettings()
                     }
                 }
             }
         }
-    }
-}
-
-private fun canShowFullScreenAlerts(context: android.content.Context): Boolean {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) return true
-    val manager = context.getSystemService(NotificationManager::class.java)
-    return manager?.canUseFullScreenIntent() ?: false
-}
-
-private fun android.content.Context.openFullScreenIntentSettings() {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) return
-    runCatching {
-        startActivity(
-            Intent(
-                Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT,
-                Uri.parse("package:$packageName"),
-            ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
-        )
     }
 }
 
