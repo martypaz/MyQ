@@ -21,10 +21,7 @@ class ReminderScheduler(private val context: Context) {
         if (fireAt <= System.currentTimeMillis()) return
 
         val pending = pendingIntentFor(reminder.programmeId) {
-            putExtra(ReminderReceiver.EXTRA_TITLE, reminder.title)
-            putExtra(ReminderReceiver.EXTRA_CHANNEL, reminder.channelName)
-            putExtra(ReminderReceiver.EXTRA_START_MILLIS, reminder.startMillis)
-            putExtra(ReminderReceiver.EXTRA_LEAD_HOURS, reminder.leadHours)
+            ReminderAlert.from(reminder).writeTo(this)
         }
 
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S || alarmManager.canScheduleExactAlarms()) {
