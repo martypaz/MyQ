@@ -20,6 +20,7 @@ import com.martypaz.myq.data.streaming.StreamingApp
 import com.martypaz.myq.data.streaming.openInStreamingApp
 import com.martypaz.myq.data.streaming.streamingAppFor
 import com.martypaz.myq.recs.Recommender
+import com.martypaz.myq.reminders.migrateReminderIds
 import com.martypaz.myq.ui.components.NavDestination
 import com.martypaz.myq.ui.screens.SeriesOpinion
 import com.martypaz.myq.ui.screens.searchProgrammes
@@ -107,6 +108,15 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
             val result = app.epgRepository.load()
+
+            // Reminders are stored against the programme id the listings used
+            // when they were set, and those ids change when the listings do.
+            // Reattach them before anything renders, so a card the user has
+            // already flagged never appears unflagged.
+            if (result.isLive) {
+                migrateReminderIds(app.reminderStore, app.reminderScheduler, result.programmes)
+            }
+
             programmes.value = result.programmes
             _uiState.value = _uiState.value.copy(
                 isLoading = false,

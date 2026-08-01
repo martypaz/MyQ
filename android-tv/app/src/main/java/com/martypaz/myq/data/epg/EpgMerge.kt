@@ -42,11 +42,17 @@ fun mergeProgrammes(
  * Start times are bucketed to five minutes because sources round differently —
  * one listing may say 21:00 where the other says 20:59 — and a channel cannot
  * show two different programmes inside one bucket anyway.
+ *
+ * This is also how anything the user saved against a programme finds that
+ * programme again after its id changes; see the reminder migration.
  */
-internal fun broadcastKey(programme: Programme): String {
-    val slot = programme.startMillis / SLOT_MILLIS
-    return "${normaliseChannelName(programme.channelName)}|$slot|${programme.title.trim().lowercase()}"
+internal fun broadcastKey(channelName: String, title: String, startMillis: Long): String {
+    val slot = startMillis / SLOT_MILLIS
+    return "${normaliseChannelName(channelName)}|$slot|${title.trim().lowercase()}"
 }
+
+internal fun broadcastKey(programme: Programme): String =
+    broadcastKey(programme.channelName, programme.title, programme.startMillis)
 
 /**
  * Fills this programme's blanks from [other] without ever overwriting what it
