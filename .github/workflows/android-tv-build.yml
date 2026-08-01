@@ -2,7 +2,7 @@ name: Android TV build
 
 on:
   push:
-    branches: ["claude/android-tv-freeview-app-8qnz03"]
+    branches: ["main", "claude/android-tv-freeview-app-8qnz03"]
     paths: ["android-tv/**", ".github/workflows/android-tv-build.yml"]
   workflow_dispatch:
 
