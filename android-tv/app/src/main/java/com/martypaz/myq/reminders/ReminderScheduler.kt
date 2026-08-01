@@ -91,8 +91,31 @@ class ReminderScheduler(private val context: Context) {
     }
 
     private companion object {
-        const val TEST_DELAY_MILLIS = 5_000L
+        const val TEST_DELAY_MILLIS = 15_000L
         const val ONE_HOUR_MILLIS = 60L * 60L * 1000L
         const val INEXACT_WINDOW_MILLIS = 10L * 60L * 1000L
     }
+}
+
+/**
+ * Opens the reminder alert directly, with no alarm and no notification.
+ *
+ * A foreground app may start an activity, so this works regardless of the
+ * notification and full-screen permissions — which is exactly what makes it
+ * useful for telling those failures apart.
+ */
+fun ReminderScheduler.showAlertNow(context: android.content.Context): Boolean {
+    val alert = ReminderAlert(
+        programmeId = "myq-test-alert",
+        title = "Test reminder",
+        channelName = "MyQ",
+        startMillis = System.currentTimeMillis() + 60L * 60L * 1000L,
+        leadMinutes = 60,
+    )
+    return runCatching {
+        context.startActivity(
+            context.reminderAlertIntent(alert, ReminderActivity::class.java)
+                .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK),
+        )
+    }.isSuccess
 }

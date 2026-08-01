@@ -59,6 +59,8 @@ class ReminderActivity : ComponentActivity() {
             return
         }
 
+        ReminderTrace.recordAlertShown(this)
+
         // The viewer is looking at it; the notification copy is now noise.
         (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager)
             .cancel(alert.notificationId)

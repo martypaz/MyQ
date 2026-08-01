@@ -29,12 +29,8 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.sp
 import com.martypaz.myq.data.epg.EpgRepository
-import com.martypaz.myq.reminders.ReminderReadiness
-import com.martypaz.myq.reminders.openFullScreenAlertSettings
-import com.martypaz.myq.reminders.openNotificationSettings
 import com.martypaz.myq.data.prefs.Profile
 import com.martypaz.myq.ui.theme.SkyPalette
 import com.martypaz.myq.ui.components.LeadTimeDropdown
@@ -72,10 +68,6 @@ fun SettingsScreen(
     onDefaultLeadChange: (Int) -> Unit,
     onRefresh: () -> Unit,
     onClearTaste: () -> Unit,
-    isDeveloperMode: Boolean = false,
-    onTestReminder: () -> Unit = {},
-    readiness: ReminderReadiness? = null,
-    developerMessage: String? = null,
 ) {
     Column(
         modifier = Modifier
@@ -142,27 +134,6 @@ fun SettingsScreen(
             SettingChip(label = "Reset what MyQ has learned") { onClearTaste() }
         }
 
-        if (isDeveloperMode) {
-            val context = LocalContext.current
-            SettingBlock(
-                "Reminders",
-                developerMessage
-                    ?: readiness?.blockers?.firstOrNull()
-                    ?: "Everything a reminder needs is allowed.",
-            ) {
-                SettingChip(label = "Test reminder in 5s") { onTestReminder() }
-                if (readiness != null && !readiness.notificationsEnabled) {
-                    SettingChip(label = "Turn on notifications") {
-                        context.openNotificationSettings()
-                    }
-                }
-                if (readiness != null && !readiness.fullScreenAlertsAllowed) {
-                    SettingChip(label = "Allow full-screen alerts") {
-                        context.openFullScreenAlertSettings()
-                    }
-                }
-            }
-        }
     }
 }
 

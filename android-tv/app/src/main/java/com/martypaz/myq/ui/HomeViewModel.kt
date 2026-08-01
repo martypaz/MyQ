@@ -29,6 +29,7 @@ import com.martypaz.myq.data.tv.tuneTo
 import com.martypaz.myq.recs.Recommender
 import com.martypaz.myq.reminders.ReminderReadiness
 import com.martypaz.myq.reminders.checkReminderReadiness
+import com.martypaz.myq.reminders.showAlertNow
 import com.martypaz.myq.reminders.migrateReminderIds
 import com.martypaz.myq.ui.components.NavDestination
 import com.martypaz.myq.ui.screens.SeriesOpinion
@@ -64,13 +65,17 @@ data class HomeUiState(
     val searchResults: List<Programme> = emptyList(),
     /** Non-null while the programme actions overlay is open. */
     val dialog: ProgrammeDialogState? = null,
-    /** Gates the developer tools in Settings. */
+    /** Gates the Developer section in the left rail. */
     val isDeveloperMode: Boolean = false,
     /** Permission state behind reminders, refreshed when Settings is shown. */
     val reminderReadiness: ReminderReadiness? = null,
     /** One-off feedback from a developer action. */
     val developerMessage: String? = null,
 ) {
+    /** Developer is only listed when it is reachable. */
+    val destinations: List<NavDestination>
+        get() = NavDestination.entries.filter { it != NavDestination.DEVELOPER || isDeveloperMode }
+
     fun isRecording(programmeId: String) = recordings.any { it.programmeId == programmeId }
     fun isSeriesRecording(title: String) = recordings.any { it.title == title && it.isSeries }
 }
@@ -175,9 +180,25 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         _uiState.value = _uiState.value.copy(
             reminderReadiness = readiness,
             developerMessage = if (readiness.isReady) {
-                "Armed. The alert should appear in about five seconds — leave MyQ now to check it still does."
+                "Armed for 15 seconds' time. Leave MyQ now — a full-screen alert is usually suppressed while the app that posted it is still in front of you."
             } else {
                 "Armed, but it will not be seen: ${readiness.blockers.first()}"
+            },
+        )
+    }
+
+    /**
+     * Opens the alert directly, skipping the alarm and the notification. If
+     * this appears and a timed test does not, the alert is fine and the
+     * notification path is where to look.
+     */
+    fun showAlertNow() {
+        val shown = app.reminderScheduler.showAlertNow(getApplication())
+        _uiState.value = _uiState.value.copy(
+            developerMessage = if (shown) {
+                "Alert opened directly. If the timed test never appears, the alert is not the problem."
+            } else {
+                "Could not open the alert at all, which points at the activity rather than any permission."
             },
         )
     }

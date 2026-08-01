@@ -39,6 +39,7 @@ enum class NavDestination(val label: String, val glyph: String) {
     RECORDINGS("Recordings", "●"),
     SERIES("Manage series", "☰"),
     SETTINGS("Settings", "⚙"),
+    DEVELOPER("Developer", "⚑"),
 }
 
 /**
@@ -50,6 +51,8 @@ fun NavRail(
     selected: NavDestination,
     onSelect: (NavDestination) -> Unit,
     modifier: Modifier = Modifier,
+    /** Developer is only listed when it is reachable. */
+    destinations: List<NavDestination> = NavDestination.entries,
 ) {
     var expanded by remember { mutableStateOf(false) }
 
@@ -67,7 +70,7 @@ fun NavRail(
             .padding(vertical = 24.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        NavDestination.entries.forEach { destination ->
+        destinations.forEach { destination ->
             NavItem(
                 destination = destination,
                 expanded = expanded,

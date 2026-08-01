@@ -29,6 +29,9 @@ class ReminderReceiver : BroadcastReceiver() {
         if (intent.action != ACTION_SHOW) return
         val alert = ReminderAlert.from(intent) ?: return
 
+        // First link in the chain: record that we got here at all.
+        ReminderTrace.recordAlarmFired(context)
+
         val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         manager.createNotificationChannel(
             NotificationChannel(

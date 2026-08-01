@@ -35,6 +35,8 @@ import com.martypaz.myq.ui.components.HeroPanel
 import com.martypaz.myq.ui.components.NavDestination
 import com.martypaz.myq.ui.components.NavRail
 import com.martypaz.myq.ui.components.ProgrammeCard
+import com.martypaz.myq.ui.components.Clock
+import com.martypaz.myq.ui.screens.DeveloperScreen
 import com.martypaz.myq.ui.screens.ManageSeriesScreen
 import com.martypaz.myq.ui.screens.RecordingsScreen
 import com.martypaz.myq.ui.screens.SearchScreen
@@ -63,6 +65,7 @@ fun HomeScreen(viewModel: HomeViewModel) {
             NavRail(
                 selected = state.destination,
                 onSelect = viewModel::onDestinationSelected,
+                destinations = state.destinations,
                 modifier = Modifier.padding(start = 12.dp),
             )
 
@@ -88,6 +91,13 @@ fun HomeScreen(viewModel: HomeViewModel) {
                         opinions = state.opinions,
                         onCycle = viewModel::cycleVerdict,
                     )
+                    NavDestination.DEVELOPER -> DeveloperScreen(
+                        readiness = state.reminderReadiness,
+                        message = state.developerMessage,
+                        onTestReminder = viewModel::fireTestReminder,
+                        onShowAlertNow = viewModel::showAlertNow,
+                        onRefresh = viewModel::refreshReminderReadiness,
+                    )
                     NavDestination.SETTINGS -> SettingsScreen(
                         profile = state.profile,
                         isLiveData = state.isLiveData,
@@ -96,14 +106,16 @@ fun HomeScreen(viewModel: HomeViewModel) {
                         onDefaultLeadChange = viewModel::setDefaultLeadMinutes,
                         onRefresh = viewModel::refresh,
                         onClearTaste = viewModel::clearTaste,
-                        isDeveloperMode = state.isDeveloperMode,
-                        readiness = state.reminderReadiness,
-                        developerMessage = state.developerMessage,
-                        onTestReminder = viewModel::fireTestReminder,
                     )
                 }
             }
         }
+
+        Clock(
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .padding(start = 24.dp, bottom = 20.dp),
+        )
 
         if (!state.isLiveData && !state.isLoading) {
             OfflineBanner(modifier = Modifier.align(Alignment.TopEnd).padding(24.dp))
