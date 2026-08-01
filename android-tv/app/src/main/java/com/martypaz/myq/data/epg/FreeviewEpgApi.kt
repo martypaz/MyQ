@@ -24,7 +24,15 @@ import java.util.concurrent.TimeUnit
 class FreeviewEpgApi(
     private val client: OkHttpClient = defaultClient(),
     private val feedUrl: String = FEED_URL,
+    /** Where to keep the fetched feed between launches; null disables caching. */
+    cacheDir: java.io.File? = null,
 ) {
+
+    private val cachingClient = cacheDir?.let {
+        client.newBuilder()
+            .cache(okhttp3.Cache(java.io.File(it, "epg"), CACHE_BYTES))
+            .build()
+    } ?: client
 
     suspend fun listings(fromMillis: Long, toMillis: Long): List<Programme> =
         withContext(Dispatchers.IO) {
@@ -33,7 +41,7 @@ class FreeviewEpgApi(
                 .header("Accept", "application/xml")
                 .build()
 
-            client.newCall(request).execute().use { response ->
+            cachingClient.newCall(request).execute().use { response ->
                 if (!response.isSuccessful) error("Freeview-EPG responded ${response.code}")
                 val body = response.body ?: return@withContext emptyList()
                 XmlTvParser.parse(
@@ -47,6 +55,13 @@ class FreeviewEpgApi(
 
     companion object {
         const val FEED_URL = "https://raw.githubusercontent.com/dp247/Freeview-EPG/master/epg.xml"
+
+        /**
+         * Room for a couple of revisions of the feed. GitHub serves it with an
+         * ETag, so a relaunch inside the 12-hour rebuild window revalidates in
+         * one round trip instead of pulling 20MB again.
+         */
+        private const val CACHE_BYTES = 64L * 1024 * 1024
 
         /** A week of XML over a domestic connection deserves a long read timeout. */
         private fun defaultClient() = OkHttpClient.Builder()

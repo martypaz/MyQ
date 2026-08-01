@@ -95,6 +95,8 @@ fun HomeScreen(viewModel: HomeViewModel) {
                         onDefaultLeadChange = viewModel::setDefaultLeadHours,
                         onRefresh = viewModel::refresh,
                         onClearTaste = viewModel::clearTaste,
+                        isDeveloperMode = state.isDeveloperMode,
+                        onTestReminder = viewModel::fireTestReminder,
                     )
                 }
             }

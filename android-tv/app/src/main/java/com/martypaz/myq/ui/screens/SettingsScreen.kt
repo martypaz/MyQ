@@ -30,6 +30,12 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import android.app.NotificationManager
+import android.content.Intent
+import android.net.Uri
+import android.os.Build
+import android.provider.Settings
+import androidx.compose.ui.platform.LocalContext
 import com.martypaz.myq.data.epg.EpgRepository
 import com.martypaz.myq.data.prefs.Profile
 import com.martypaz.myq.ui.theme.SkyPalette
@@ -68,6 +74,8 @@ fun SettingsScreen(
     onDefaultLeadChange: (Int) -> Unit,
     onRefresh: () -> Unit,
     onClearTaste: () -> Unit,
+    isDeveloperMode: Boolean = false,
+    onTestReminder: () -> Unit = {},
 ) {
     Column(
         modifier = Modifier
@@ -134,6 +142,43 @@ fun SettingsScreen(
         ) {
             SettingChip(label = "Reset what MyQ has learned") { onClearTaste() }
         }
+
+        if (isDeveloperMode) {
+            val context = LocalContext.current
+            SettingBlock(
+                "Developer",
+                "Fires a reminder five seconds from now through the real alarm and " +
+                    "full-screen alert. Leave MyQ once it is armed to check it still arrives.",
+            ) {
+                SettingChip(label = "Test reminder in 5s") { onTestReminder() }
+                if (!canShowFullScreenAlerts(context)) {
+                    // Android 14 revokes this for anything that is not a
+                    // dialler or alarm clock, and the reminder silently
+                    // degrades to a notification nobody sees on a television.
+                    SettingChip(label = "Allow full-screen alerts") {
+                        context.openFullScreenIntentSettings()
+                    }
+                }
+            }
+        }
+    }
+}
+
+private fun canShowFullScreenAlerts(context: android.content.Context): Boolean {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) return true
+    val manager = context.getSystemService(NotificationManager::class.java)
+    return manager?.canUseFullScreenIntent() ?: false
+}
+
+private fun android.content.Context.openFullScreenIntentSettings() {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) return
+    runCatching {
+        startActivity(
+            Intent(
+                Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT,
+                Uri.parse("package:$packageName"),
+            ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+        )
     }
 }
 

@@ -32,6 +32,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.martypaz.myq.data.epg.isLikelyFilm
 import com.martypaz.myq.data.model.Newness
 import com.martypaz.myq.data.model.Programme
 import com.martypaz.myq.ui.formatStart
@@ -103,6 +104,8 @@ fun ProgrammeCard(
             hasReminder -> "⏰" to SkyPalette.ReminderBadge
             programme.newness == Newness.NEW_SERIES -> "NEW" to SkyPalette.AccentBadge
             programme.newness == Newness.NEW_SEASON -> "NEW SEASON" to SkyPalette.AccentBadge
+            // Type, not state — so it yields to anything the user has set.
+            programme.isLikelyFilm() -> "🎬 FILM" to SkyPalette.TextSecondary
             else -> null
         }
         badge?.let { (label, color) ->

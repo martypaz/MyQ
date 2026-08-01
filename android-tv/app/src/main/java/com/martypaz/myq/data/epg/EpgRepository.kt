@@ -2,18 +2,29 @@ package com.martypaz.myq.data.epg
 
 import com.martypaz.myq.data.model.Programme
 import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.channelFlow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.time.LocalDate
 import java.util.concurrent.TimeUnit
 
 /**
- * Loads the next few days of listings from both EPG sources at once.
+ * Loads listings from both EPG sources at once, publishing as they arrive.
  *
- * The Freeview XMLTV feed supplies the schedule — every channel, every slot —
- * and TVmaze supplies the metadata the feed lacks, chiefly genres, which is
- * what the recommender learns from. Either source failing is survivable: the
- * other still produces a usable guide. Only when both come back empty does it
- * fall back to bundled sample data, so the app never shows an empty wall.
+ * The two sources take very different times: the Freeview feed is one large
+ * download, TVmaze is a request per day. Waiting for both before showing
+ * anything meant the slower one set the time to first programme. Each result
+ * is emitted as soon as it lands, so the guide appears on the first source and
+ * refines when the second catches up.
+ *
+ * Either source failing is survivable — the other still produces a usable
+ * guide. Only when both come back empty does it fall back to bundled sample
+ * data, so the app never shows an empty wall.
  */
 class EpgRepository(
     private val tvMaze: TvMazeApi = TvMazeApi(),
@@ -23,47 +34,87 @@ class EpgRepository(
     data class Result(
         val programmes: List<Programme>,
         val isLive: Boolean,
-        /** Which sources answered, for the offline banner and Settings. */
+        /** Which sources have answered so far. */
         val sources: Set<Source> = emptySet(),
+        /** False while a source is still outstanding. */
+        val isComplete: Boolean = true,
     )
 
     enum class Source { FREEVIEW_EPG, TVMAZE }
 
-    suspend fun load(days: Int = 3, now: Long = System.currentTimeMillis()): Result = coroutineScope {
-        val from = now - ONE_HOUR_MILLIS
-        val to = now + TimeUnit.DAYS.toMillis(days.toLong())
+    fun load(days: Int = DEFAULT_DAYS, now: Long = System.currentTimeMillis()): Flow<Result> =
+        channelFlow {
+            val from = now - ONE_HOUR_MILLIS
+            val to = now + TimeUnit.DAYS.toMillis(days.toLong())
 
-        // Concurrent: one is a 20MB download, the other is several small
-        // requests, and there is no reason for either to wait on the other.
-        val freeviewJob = async { runCatching { freeview.listings(from, to) }.getOrDefault(emptyList()) }
-        val tvMazeJob = async { runCatching { tvMazeListings(days, from) }.getOrDefault(emptyList()) }
+            val lock = Mutex()
+            var schedule = emptyList<Programme>()
+            var enrichment = emptyList<Programme>()
+            var outstanding = 2
 
-        val schedule = freeviewJob.await()
-        val enrichment = tvMazeJob.await()
-
-        val sources = buildSet {
-            if (schedule.isNotEmpty()) add(Source.FREEVIEW_EPG)
-            if (enrichment.isNotEmpty()) add(Source.TVMAZE)
-        }
-
-        if (sources.isEmpty()) {
-            Result(SampleData.programmes(), isLive = false)
-        } else {
-            Result(mergeProgrammes(schedule, enrichment), isLive = true, sources = sources)
-        }
-    }
-
-    private suspend fun tvMazeListings(days: Int, from: Long): List<Programme> {
-        val today = LocalDate.now()
-        return (0 until days)
-            .flatMap { offset ->
-                runCatching { tvMaze.schedule(today.plusDays(offset.toLong())) }.getOrDefault(emptyList())
+            suspend fun publish() {
+                val (result, finished) = lock.withLock {
+                    outstanding -= 1
+                    val sources = buildSet {
+                        if (schedule.isNotEmpty()) add(Source.FREEVIEW_EPG)
+                        if (enrichment.isNotEmpty()) add(Source.TVMAZE)
+                    }
+                    val merged = when {
+                        sources.isNotEmpty() -> Result(
+                            programmes = mergeProgrammes(schedule, enrichment),
+                            isLive = true,
+                            sources = sources,
+                            isComplete = outstanding == 0,
+                        )
+                        outstanding == 0 -> Result(SampleData.programmes(now), isLive = false)
+                        // Nothing yet and something still running: stay quiet.
+                        else -> null
+                    }
+                    merged to (outstanding == 0)
+                }
+                result?.let { send(it) }
+                if (finished) close()
             }
+
+            launch {
+                schedule = runCatching { freeview.listings(from, to) }.getOrDefault(emptyList())
+                publish()
+            }
+            launch {
+                enrichment = runCatching { tvMazeListings(days, from) }.getOrDefault(emptyList())
+                publish()
+            }
+
+            awaitClose { }
+        }
+
+    /**
+     * One request per day, run concurrently. Sequentially this was the slowest
+     * part of a load by far — at a fortnight it is fourteen round trips, and
+     * serialising them made the wait scale with the window the user asked for.
+     */
+    private suspend fun tvMazeListings(days: Int, from: Long): List<Programme> = coroutineScope {
+        val today = LocalDate.now()
+        (0 until days)
+            .map { offset ->
+                async {
+                    runCatching { tvMaze.schedule(today.plusDays(offset.toLong())) }
+                        .getOrDefault(emptyList())
+                }
+            }
+            .awaitAll()
+            .flatten()
             .distinctBy { it.id }
             .filter { it.startMillis > from }
     }
 
-    private companion object {
-        const val ONE_HOUR_MILLIS = 60L * 60L * 1000L
+    companion object {
+        /**
+         * A fortnight. The XMLTV feed publishes a week, so the back half is
+         * whatever TVmaze knows about — thinner, but it is where a series
+         * worth planning around shows up.
+         */
+        const val DEFAULT_DAYS = 14
+        private const val ONE_HOUR_MILLIS = 60L * 60L * 1000L
     }
 }

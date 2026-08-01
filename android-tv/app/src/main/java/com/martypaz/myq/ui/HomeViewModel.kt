@@ -1,6 +1,8 @@
 package com.martypaz.myq.ui
 
 import android.app.Application
+import android.content.pm.ApplicationInfo
+import android.provider.Settings
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -14,6 +16,8 @@ import com.martypaz.myq.data.model.RecordEntry
 import com.martypaz.myq.data.model.Reminder
 import com.martypaz.myq.data.model.Verdict
 import com.martypaz.myq.data.epg.EpgRepository
+import com.martypaz.myq.data.epg.isLikelyFilm
+import com.martypaz.myq.data.epg.isScheduleFiller
 import com.martypaz.myq.data.prefs.Profile
 import com.martypaz.myq.data.prefs.TasteProfile
 import com.martypaz.myq.data.streaming.StreamingApp
@@ -53,6 +57,8 @@ data class HomeUiState(
     val searchResults: List<Programme> = emptyList(),
     /** Non-null while the programme actions overlay is open. */
     val dialog: ProgrammeDialogState? = null,
+    /** Gates the developer tools in Settings. */
+    val isDeveloperMode: Boolean = false,
 ) {
     fun isRecording(programmeId: String) = recordings.any { it.programmeId == programmeId }
     fun isSeriesRecording(title: String) = recordings.any { it.title == title && it.isSeries }
@@ -69,6 +75,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     private var browseSignalJob: Job? = null
 
     init {
+        _uiState.value = _uiState.value.copy(isDeveloperMode = isDeveloperMode(application))
         refresh()
         viewModelScope.launch {
             combine(
@@ -107,23 +114,52 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     fun refresh() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
-            val result = app.epgRepository.load()
 
-            // Reminders are stored against the programme id the listings used
-            // when they were set, and those ids change when the listings do.
-            // Reattach them before anything renders, so a card the user has
-            // already flagged never appears unflagged.
-            if (result.isLive) {
-                migrateReminderIds(app.reminderStore, app.reminderScheduler, result.programmes)
+            // Each source publishes as it lands, so the guide appears on the
+            // first one rather than waiting for the slower of the two.
+            app.epgRepository.load().collect { result ->
+                // Reminders are stored against the programme id the listings
+                // used when they were set, and those ids change when the
+                // listings do. Reattach them before anything renders, so a
+                // card the user has already flagged never appears unflagged.
+                if (result.isLive) {
+                    migrateReminderIds(app.reminderStore, app.reminderScheduler, result.programmes)
+                }
+
+                programmes.value = result.programmes
+                _uiState.value = _uiState.value.copy(
+                    isLoading = !result.isComplete,
+                    isLiveData = result.isLive,
+                    sources = result.sources,
+                )
             }
-
-            programmes.value = result.programmes
-            _uiState.value = _uiState.value.copy(
-                isLoading = false,
-                isLiveData = result.isLive,
-                sources = result.sources,
-            )
         }
+    }
+
+    // --- developer tools ---
+
+    /**
+     * Fires a reminder five seconds from now through the real alarm, receiver
+     * and full-screen intent, so the whole path can be seen working. Navigate
+     * away from MyQ once it is armed and the alert should still arrive.
+     */
+    fun fireTestReminder() {
+        app.reminderScheduler.scheduleTest()
+    }
+
+    /**
+     * True on a debug build, or when the device has developer options turned
+     * on — the two situations where someone is deliberately poking at MyQ
+     * rather than watching television.
+     */
+    private fun isDeveloperMode(application: Application): Boolean {
+        val debuggable = application.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0
+        val developerOptions = Settings.Global.getInt(
+            application.contentResolver,
+            Settings.Global.DEVELOPMENT_SETTINGS_ENABLED,
+            0,
+        ) == 1
+        return debuggable || developerOptions
     }
 
     // --- welcome ---
@@ -305,6 +341,25 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             runCatching { Verdict.valueOf(raw) }.getOrNull()?.let { SeriesOpinion(title, it) }
         }.sortedWith(compareBy({ it.verdict.ordinal }, { it.title }))
 
+    /**
+     * What the browse rails are allowed to suggest: a series with enough
+     * episodes ahead to be worth starting, or a film.
+     *
+     * A fortnight of the full Freeview line-up is mostly things nobody browses
+     * for — continuity, shopping, one-off filler — and burying the four
+     * programmes someone might actually plan around under them makes the rails
+     * useless. Search is deliberately not filtered, so anything dropped here
+     * is still findable by name.
+     */
+    private fun worthBrowsing(programmes: List<Programme>): List<Programme> {
+        val episodeCounts = programmes.groupingBy { it.title.trim().lowercase() }.eachCount()
+        return programmes.filter { programme ->
+            if (programme.isScheduleFiller()) return@filter false
+            if (programme.isLikelyFilm()) return@filter true
+            (episodeCounts[programme.title.trim().lowercase()] ?: 0) >= MIN_EPISODES_TO_BROWSE
+        }
+    }
+
     private fun buildRails(
         all: List<Programme>,
         forYou: List<Programme>,
@@ -314,12 +369,16 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
         // A hated series should not resurface anywhere MyQ is making suggestions.
         val visible = all.filterNot { taste.verdictFor(it.title) == Verdict.HATE }
+            .let(::worthBrowsing)
 
         val tonightEnd = LocalDate.now().plusDays(1).atTime(LocalTime.of(6, 0))
             .atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
 
+        val visibleIds = visible.mapTo(HashSet(visible.size)) { it.id }
+        val recommended = forYou.filter { it.id in visibleIds }
+
         return listOfNotNull(
-            forYou.takeIf { it.isNotEmpty() }?.let { Rail("for-you", "For You", it) },
+            recommended.takeIf { it.isNotEmpty() }?.let { Rail("for-you", "For You", it) },
             visible.filter { it.newness == Newness.NEW_SERIES }
                 .takeIf { it.isNotEmpty() }?.let { Rail("new-series", "New Series", it.take(30)) },
             visible.filter { it.newness == Newness.NEW_SEASON }
@@ -333,6 +392,9 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     companion object {
+        /** Enough episodes ahead that starting the series is worth it. */
+        const val MIN_EPISODES_TO_BROWSE = 4
+
         fun factory(application: Application) = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T =

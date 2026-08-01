@@ -32,6 +32,24 @@ class ReminderScheduler(private val context: Context) {
         }
     }
 
+    /**
+     * Arms a reminder a few seconds out through the ordinary path — real
+     * alarm, real receiver, real full-screen intent — so the whole chain can
+     * be seen working without waiting for a programme. Not persisted, so it
+     * never appears in the guide.
+     */
+    fun scheduleTest(inMillis: Long = TEST_DELAY_MILLIS): Reminder {
+        val reminder = Reminder(
+            programmeId = "myq-test-reminder",
+            title = "Test reminder",
+            channelName = "MyQ",
+            startMillis = System.currentTimeMillis() + inMillis + ONE_HOUR_MILLIS,
+            leadHours = 1,
+        )
+        schedule(reminder)
+        return reminder
+    }
+
     fun cancel(programmeId: String) {
         alarmManager.cancel(pendingIntentFor(programmeId) {})
     }
@@ -50,5 +68,10 @@ class ReminderScheduler(private val context: Context) {
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
+    }
+
+    private companion object {
+        const val TEST_DELAY_MILLIS = 5_000L
+        const val ONE_HOUR_MILLIS = 60L * 60L * 1000L
     }
 }
