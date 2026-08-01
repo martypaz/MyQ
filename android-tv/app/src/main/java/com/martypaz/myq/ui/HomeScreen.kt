@@ -5,9 +5,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -18,7 +18,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -26,29 +31,67 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.martypaz.myq.data.model.Rail
 import com.martypaz.myq.ui.components.HeroPanel
+import com.martypaz.myq.ui.components.NavDestination
+import com.martypaz.myq.ui.components.NavRail
 import com.martypaz.myq.ui.components.ProgrammeCard
+import com.martypaz.myq.ui.screens.ManageSeriesScreen
+import com.martypaz.myq.ui.screens.RecordingsScreen
+import com.martypaz.myq.ui.screens.SearchScreen
+import com.martypaz.myq.ui.screens.SettingsScreen
 import com.martypaz.myq.ui.theme.SkyPalette
 
 @Composable
 fun HomeScreen(viewModel: HomeViewModel) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
+    if (state.showWelcome) {
+        WelcomeScreen(
+            firstName = state.profile.firstName,
+            onNameEntered = viewModel::onNameEntered,
+            onContinue = viewModel::onWelcomeFinished,
+        )
+        return
+    }
+
     Box(modifier = Modifier.fillMaxSize()) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 48.dp, vertical = 27.dp), // TV overscan-safe margins
-        ) {
-            HeroPanel(
-                programme = state.heroProgramme,
-                hasReminder = state.heroProgramme?.let { it.id in state.reminders } == true,
+        Row(modifier = Modifier.fillMaxSize()) {
+            NavRail(
+                selected = state.destination,
+                onSelect = viewModel::onDestinationSelected,
+                modifier = Modifier.padding(start = 12.dp),
             )
 
-            Spacer(Modifier.height(12.dp))
-
-            when {
-                state.isLoading && state.rails.isEmpty() -> LoadingHint()
-                else -> RailList(state, viewModel)
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    // TV overscan-safe margins on the content side only.
+                    .padding(start = 20.dp, end = 48.dp, top = 27.dp, bottom = 27.dp),
+            ) {
+                when (state.destination) {
+                    NavDestination.HOME -> HomeContent(state, viewModel)
+                    NavDestination.SEARCH -> SearchScreen(
+                        query = state.searchQuery,
+                        results = state.searchResults,
+                        onQueryChange = viewModel::onSearchQueryChange,
+                        onSelect = viewModel::onProgrammeSelected,
+                    )
+                    NavDestination.RECORDINGS -> RecordingsScreen(
+                        recordings = state.recordings,
+                        onRemove = viewModel::removeRecording,
+                    )
+                    NavDestination.SERIES -> ManageSeriesScreen(
+                        opinions = state.opinions,
+                        onCycle = viewModel::cycleVerdict,
+                    )
+                    NavDestination.SETTINGS -> SettingsScreen(
+                        profile = state.profile,
+                        isLiveData = state.isLiveData,
+                        onNameChange = viewModel::setName,
+                        onDefaultLeadChange = viewModel::setDefaultLeadHours,
+                        onRefresh = viewModel::refresh,
+                        onClearTaste = viewModel::clearTaste,
+                    )
+                }
             }
         }
 
@@ -56,14 +99,34 @@ fun HomeScreen(viewModel: HomeViewModel) {
             OfflineBanner(modifier = Modifier.align(Alignment.TopEnd).padding(24.dp))
         }
 
-        state.reminderTarget?.let { target ->
-            ReminderDialog(
-                programme = target,
-                existingLeadHours = state.reminders[target.id]?.leadHours,
-                onConfirm = viewModel::setReminder,
-                onRemove = viewModel::removeReminder,
-                onDismiss = viewModel::dismissReminderDialog,
+        state.dialog?.let { dialog ->
+            ProgrammeDialog(
+                state = dialog,
+                onSetReminder = viewModel::setReminder,
+                onRemoveReminder = viewModel::removeReminder,
+                onSetVerdict = viewModel::setVerdict,
+                onRecord = viewModel::record,
+                onCancelRecord = viewModel::cancelRecord,
+                onDismiss = viewModel::dismissDialog,
             )
+        }
+    }
+}
+
+@Composable
+private fun HomeContent(state: HomeUiState, viewModel: HomeViewModel) {
+    Column(modifier = Modifier.fillMaxSize()) {
+        HeroPanel(
+            programme = state.heroProgramme,
+            hasReminder = state.heroProgramme?.let { it.id in state.reminders } == true,
+            isRecording = state.heroProgramme?.let { state.isRecording(it.id) } == true,
+        )
+
+        Spacer(Modifier.height(8.dp))
+
+        when {
+            state.isLoading && state.rails.isEmpty() -> LoadingHint()
+            else -> RailList(state, viewModel)
         }
     }
 }
@@ -71,34 +134,45 @@ fun HomeScreen(viewModel: HomeViewModel) {
 @Composable
 private fun RailList(state: HomeUiState, viewModel: HomeViewModel) {
     LazyColumn(
-        verticalArrangement = Arrangement.spacedBy(24.dp),
-        contentPadding = PaddingValues(bottom = 40.dp),
-        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
+        contentPadding = PaddingValues(bottom = 32.dp),
+        modifier = Modifier
+            .fillMaxSize()
+            // Cards scrolled up behind the hero fade out instead of being cut
+            // off mid-image, which reads as a rendering fault on a big screen.
+            .graphicsLayer(compositingStrategy = CompositingStrategy.Offscreen)
+            .drawWithContent {
+                drawContent()
+                drawRect(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(Color.Transparent, Color.Black),
+                        startY = 0f,
+                        endY = 44f,
+                    ),
+                    blendMode = BlendMode.DstIn,
+                )
+            },
     ) {
         items(state.rails.size, key = { state.rails[it].id }) { index ->
-            RailRow(
-                rail = state.rails[index],
-                state = state,
-                viewModel = viewModel,
-            )
+            RailRow(rail = state.rails[index], state = state, viewModel = viewModel)
         }
     }
 }
 
 @Composable
 private fun RailRow(rail: Rail, state: HomeUiState, viewModel: HomeViewModel) {
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         BasicText(
             text = rail.title,
             style = TextStyle(
                 color = SkyPalette.TextPrimary,
-                fontSize = 18.sp,
+                fontSize = 17.sp,
                 fontWeight = FontWeight.SemiBold,
             ),
             modifier = Modifier.padding(start = 8.dp),
         )
         LazyRow(
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
             contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp),
         ) {
             items(rail.programmes.size, key = { "${rail.id}-${rail.programmes[it].id}" }) { index ->
@@ -106,6 +180,7 @@ private fun RailRow(rail: Rail, state: HomeUiState, viewModel: HomeViewModel) {
                 ProgrammeCard(
                     programme = programme,
                     hasReminder = programme.id in state.reminders,
+                    isRecording = state.isRecording(programme.id),
                     onFocused = viewModel::onProgrammeFocused,
                     onSelected = viewModel::onProgrammeSelected,
                 )

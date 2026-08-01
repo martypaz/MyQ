@@ -13,6 +13,9 @@ enum class Newness {
     NONE,
 }
 
+/** The user's standing opinion of a series, set from the programme dialog. */
+enum class Verdict { LOVE, HATE, NONE }
+
 @Serializable
 data class Programme(
     val id: String,
@@ -44,6 +47,23 @@ data class Reminder(
 ) {
     val fireAtMillis: Long get() = startMillis - leadHours * 60L * 60L * 1000L
 }
+
+/**
+ * A programme the user has marked to record.
+ *
+ * MyQ cannot drive the television's own tuner — Android reserves the DVR APIs
+ * for system TV inputs — so this is MyQ's own record list: it tracks what you
+ * want to catch and reminds you before it starts. [isSeries] marks the whole
+ * series, so later episodes of the same title are picked up automatically.
+ */
+@Serializable
+data class RecordEntry(
+    val programmeId: String,
+    val title: String,
+    val channelName: String,
+    val startMillis: Long,
+    val isSeries: Boolean = false,
+)
 
 /** One horizontal rail on the home screen. */
 data class Rail(

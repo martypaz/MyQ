@@ -45,6 +45,7 @@ import com.martypaz.myq.ui.theme.SkyPalette
 fun ProgrammeCard(
     programme: Programme,
     hasReminder: Boolean,
+    isRecording: Boolean = false,
     onFocused: (Programme) -> Unit,
     onSelected: (Programme) -> Unit,
     modifier: Modifier = Modifier,
@@ -59,8 +60,8 @@ fun ProgrammeCard(
 
     Box(
         modifier = modifier
-            .width(240.dp)
-            .height(150.dp)
+            .width(224.dp)
+            .height(126.dp)
             .scale(scale)
             .clip(RoundedCornerShape(6.dp))
             .background(if (isFocused) SkyPalette.CardFocused else SkyPalette.CardBackground)
@@ -115,6 +116,7 @@ fun ProgrammeCard(
         )
 
         val badge = when {
+            isRecording -> "●" to SkyPalette.RecordBadge
             hasReminder -> "⏰" to SkyPalette.ReminderBadge
             programme.newness == Newness.NEW_SERIES -> "NEW" to SkyPalette.AccentBadge
             programme.newness == Newness.NEW_SEASON -> "NEW SEASON" to SkyPalette.AccentBadge

@@ -29,6 +29,8 @@ object SkyPalette {
 
     val AccentBadge = Color(0xFFF2A93B)   // "New series" amber, like Sky's highlight chips
     val ReminderBadge = Color(0xFF41C7C7) // teal for reminder-set state
+    val RecordBadge = Color(0xFFE2574C)   // record red, the universal PVR colour
+    val HateBadge = Color(0xFF8E9BC4)     // muted: hiding something is not an alarm
 }
 
 @Composable

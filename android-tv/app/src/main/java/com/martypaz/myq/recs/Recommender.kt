@@ -2,6 +2,7 @@ package com.martypaz.myq.recs
 
 import com.martypaz.myq.data.model.Newness
 import com.martypaz.myq.data.model.Programme
+import com.martypaz.myq.data.model.Verdict
 import com.martypaz.myq.data.prefs.TasteProfile
 import com.martypaz.myq.data.prefs.TasteStore
 import kotlin.math.pow
@@ -39,14 +40,21 @@ class Recommender(private val store: TasteStore) {
         recommendForYou(profile, programmes, limit)
 }
 
-/** Highest-scoring upcoming programmes; empty until the profile has any signal. */
+/**
+ * Highest-scoring upcoming programmes. Loved series always qualify; hated ones
+ * never do. Otherwise the rail stays empty until the profile has some signal.
+ */
 fun recommendForYou(
     profile: TasteProfile,
     programmes: List<Programme>,
     limit: Int = 20,
 ): List<Programme> {
-    if (profile.genreWeights.isEmpty() && profile.channelWeights.isEmpty()) return emptyList()
+    val hasLearnedSignal = profile.genreWeights.isNotEmpty() || profile.channelWeights.isNotEmpty()
+    val hasLoves = profile.verdicts.containsValue(Verdict.LOVE.name)
+    if (!hasLearnedSignal && !hasLoves) return emptyList()
+
     return programmes
+        .filterNot { profile.verdictFor(it.title) == Verdict.HATE }
         .map { it to scoreProgramme(profile, it) }
         .filter { (_, score) -> score > 0.0 }
         .sortedByDescending { (_, score) -> score }
@@ -55,6 +63,15 @@ fun recommendForYou(
 }
 
 internal fun scoreProgramme(profile: TasteProfile, programme: Programme): Double {
+    return when (profile.verdictFor(programme.title)) {
+        // An explicit opinion is the whole answer — no learned weight overrides it.
+        Verdict.HATE -> 0.0
+        Verdict.LOVE -> LOVE_SCORE + learnedScore(profile, programme)
+        Verdict.NONE -> learnedScore(profile, programme)
+    }
+}
+
+private fun learnedScore(profile: TasteProfile, programme: Programme): Double {
     val genreScore = programme.genres.sumOf { profile.genreWeights[it] ?: 0.0 }
     val channelScore = profile.channelWeights[programme.channelName] ?: 0.0
     val newnessBoost = when (programme.newness) {
@@ -64,6 +81,9 @@ internal fun scoreProgramme(profile: TasteProfile, programme: Programme): Double
     }
     return (genreScore + 0.5 * channelScore) * newnessBoost
 }
+
+/** Large enough that any loved series outranks anything merely inferred. */
+private const val LOVE_SCORE = 1_000.0
 
 /** Applies ~2%/day decay so old obsessions fade; drops near-zero weights. */
 internal fun TasteProfile.decayed(now: Long = System.currentTimeMillis()): TasteProfile {

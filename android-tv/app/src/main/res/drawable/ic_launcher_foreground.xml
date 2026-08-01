@@ -1,15 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  Adaptive-icon foreground. The mark is drawn at ~66% scale so it sits inside
+  the launcher's safe zone once the system applies its own mask and padding.
+-->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- Simple play-in-screen glyph -->
-    <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M30,36 h48 a4,4 0 0 1 4,4 v24 a4,4 0 0 1 -4,4 h-48 a4,4 0 0 1 -4,-4 v-24 a4,4 0 0 1 4,-4 z"
-        android:fillAlpha="0.18" />
-    <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M48,42 l16,10 l-16,10 z" />
+    <group
+        android:pivotX="54"
+        android:pivotY="54"
+        android:scaleX="0.66"
+        android:scaleY="0.66">
+        <path
+            android:fillColor="#FFFFFF"
+            android:fillType="evenOdd"
+            android:pathData="M54,54 m-30,0 a30,30 0 1,0 60,0 a30,30 0 1,0 -60,0 Z M54,54 m-19,0 a19,19 0 1,0 38,0 a19,19 0 1,0 -38,0 Z" />
+        <path
+            android:pathData="M63,63 L81,81"
+            android:strokeColor="#FFFFFF"
+            android:strokeLineCap="round"
+            android:strokeWidth="10" />
+    </group>
 </vector>

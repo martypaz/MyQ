@@ -28,13 +28,18 @@ import com.martypaz.myq.ui.theme.SkyPalette
  * time and synopsis for whichever card currently has focus.
  */
 @Composable
-fun HeroPanel(programme: Programme?, hasReminder: Boolean, modifier: Modifier = Modifier) {
+fun HeroPanel(
+    programme: Programme?,
+    hasReminder: Boolean,
+    isRecording: Boolean = false,
+    modifier: Modifier = Modifier,
+) {
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .height(150.dp)
+            .height(118.dp)
             .padding(horizontal = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(6.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         if (programme == null) return@Column
 
@@ -84,13 +89,25 @@ fun HeroPanel(programme: Programme?, hasReminder: Boolean, modifier: Modifier = 
                     ),
                 )
             }
+            if (isRecording) {
+                Spacer(Modifier.width(14.dp))
+                BasicText(
+                    text = "● RECORDING",
+                    style = TextStyle(
+                        color = SkyPalette.RecordBadge,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 1.5.sp,
+                    ),
+                )
+            }
         }
 
         BasicText(
             text = programme.title,
             style = TextStyle(
                 color = SkyPalette.TextPrimary,
-                fontSize = 32.sp,
+                fontSize = 30.sp,
                 fontWeight = FontWeight.Bold,
             ),
             maxLines = 1,
@@ -105,7 +122,7 @@ fun HeroPanel(programme: Programme?, hasReminder: Boolean, modifier: Modifier = 
         BasicText(
             text = synopsis.ifBlank { programme.genres.joinToString(" · ") },
             style = TextStyle(color = SkyPalette.TextSecondary, fontSize = 16.sp, lineHeight = 22.sp),
-            maxLines = 3,
+            maxLines = 2,
             overflow = TextOverflow.Ellipsis,
         )
     }
