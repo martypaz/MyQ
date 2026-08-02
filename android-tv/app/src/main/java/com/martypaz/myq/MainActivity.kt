@@ -30,6 +30,7 @@ class MainActivity : ComponentActivity() {
                 // Reading the tuner's line-up is what lets MyQ show the region
                 // this box receives, and switch channel from a programme.
                 add(READ_TV_LISTINGS)
+                add(GET_ACCOUNTS)
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                     add(Manifest.permission.POST_NOTIFICATIONS)
                 }
@@ -46,5 +47,6 @@ class MainActivity : ComponentActivity() {
 
     private companion object {
         const val READ_TV_LISTINGS = "android.permission.READ_TV_LISTINGS"
+        const val GET_ACCOUNTS = "android.permission.GET_ACCOUNTS"
     }
 }

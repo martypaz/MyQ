@@ -23,6 +23,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.martypaz.myq.data.account.readDeviceGoogleAccount
 import com.martypaz.myq.reminders.ReminderReadiness
 import com.martypaz.myq.reminders.ReminderTrace
 import com.martypaz.myq.reminders.openExactAlarmSettings
@@ -75,6 +76,13 @@ fun DeveloperScreen(
                 "it is already in front of you, so staying here can look like a failure.",
         ) {
             DeveloperChip("Test reminder in 15s") { onTestReminder() }
+        }
+
+        DeveloperBlock(
+            "Device account",
+            readDeviceGoogleAccount(context).summary,
+        ) {
+            DeveloperChip("Re-check") { onRefresh() }
         }
 
         DeveloperBlock("What happened last time", trace.describe()) {
