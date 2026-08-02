@@ -93,6 +93,7 @@ class EpgSourceTest {
         // The enum order is load-bearing: it is what mergeAll folds along.
         assertEquals(
             listOf(
+                EpgRepository.Source.FREEVIEW_UK,
                 EpgRepository.Source.FREEVIEW_EPG,
                 EpgRepository.Source.DEVICE_TUNER,
                 EpgRepository.Source.TVMAZE,

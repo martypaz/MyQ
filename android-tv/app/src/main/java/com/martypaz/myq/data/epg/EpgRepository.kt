@@ -41,7 +41,7 @@ class EpgRepository(private val sources: List<EpgSource>) {
     )
 
     /** Declared in merge order: earlier owns identity, later enriches. */
-    enum class Source { FREEVIEW_EPG, DEVICE_TUNER, TVMAZE }
+    enum class Source { FREEVIEW_UK, FREEVIEW_EPG, DEVICE_TUNER, TVMAZE }
 
     fun load(days: Int = DEFAULT_DAYS, now: Long = System.currentTimeMillis()): Flow<Result> =
         channelFlow {

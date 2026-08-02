@@ -388,6 +388,21 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch { app.profileStore.setFirstName(name) }
     }
 
+    /** Resolves a postcode to a transmitter region, then reloads the guide. */
+    fun setPostcode(postcode: String) {
+        viewModelScope.launch {
+            val network = app.freeviewApi.networkFor(postcode)
+            if (network == null) {
+                _uiState.value = _uiState.value.copy(
+                    developerMessage = "Could not find a TV region for that postcode.",
+                )
+                return@launch
+            }
+            app.profileStore.setRegion(postcode, network.network_id, network.network_name)
+            refresh()
+        }
+    }
+
     fun setDefaultLeadMinutes(minutes: Int) {
         viewModelScope.launch { app.profileStore.setDefaultLeadMinutes(minutes) }
     }

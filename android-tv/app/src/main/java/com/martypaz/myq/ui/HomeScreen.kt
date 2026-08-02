@@ -104,6 +104,7 @@ fun HomeScreen(viewModel: HomeViewModel) {
                         sources = state.sources,
                         onNameChange = viewModel::setName,
                         onDefaultLeadChange = viewModel::setDefaultLeadMinutes,
+                        onPostcodeChange = viewModel::setPostcode,
                         onRefresh = viewModel::refresh,
                         onClearTaste = viewModel::clearTaste,
                     )

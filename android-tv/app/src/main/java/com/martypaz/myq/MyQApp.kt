@@ -6,6 +6,8 @@ import com.martypaz.myq.data.epg.FreeviewEpgApi
 import com.martypaz.myq.data.epg.FreeviewEpgSource
 import com.martypaz.myq.data.epg.TvMazeApi
 import com.martypaz.myq.data.epg.TvMazeSource
+import com.martypaz.myq.data.freeview.FreeviewApi
+import com.martypaz.myq.data.freeview.FreeviewSource
 import com.martypaz.myq.data.tv.DeviceTvSource
 import com.martypaz.myq.data.tv.TvLineup
 import com.martypaz.myq.data.prefs.ProfileStore
@@ -23,11 +25,21 @@ import kotlinx.coroutines.launch
 /** Application-scoped service container (deliberately framework-free DI). */
 class MyQApp : Application() {
 
+    val freeviewApi by lazy { FreeviewApi() }
     val tvLineup by lazy { TvLineup(this) }
+
+    /**
+     * The transmitter region, mirrored out of the profile so the listings
+     * source can read it without suspending on every request.
+     */
+    
+    var networkId: Int? = null
+        private set
 
     val epgRepository by lazy {
         EpgRepository(
             listOf(
+                FreeviewSource(freeviewApi) { networkId },
                 FreeviewEpgSource(FreeviewEpgApi(cacheDir = cacheDir)),
                 DeviceTvSource(this, tvLineup),
                 TvMazeSource(TvMazeApi()),
@@ -48,8 +60,8 @@ class MyQApp : Application() {
         // the app is opened again, so the receiver alone cannot guarantee a
         // reminder survives. Re-arming on each start closes that gap; it is
         // idempotent, so the cost is a few PendingIntent updates.
-        CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
-            rearmReminders(this@MyQApp)
-        }
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+        scope.launch { rearmReminders(this@MyQApp) }
+        scope.launch { profileStore.profile.collect { networkId = it.networkId } }
     }
 }

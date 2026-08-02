@@ -17,6 +17,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -28,6 +30,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.martypaz.myq.data.epg.EpgRepository
@@ -47,6 +51,7 @@ private fun describeSources(isLiveData: Boolean, sources: Set<EpgRepository.Sour
     }
     val names = sources.sortedBy { it.ordinal }.map {
         when (it) {
+            EpgRepository.Source.FREEVIEW_UK -> "Freeview (your region)"
             EpgRepository.Source.FREEVIEW_EPG -> "Freeview EPG (full listings)"
             EpgRepository.Source.DEVICE_TUNER -> "this TV's tuner"
             EpgRepository.Source.TVMAZE -> "TVmaze (genres and artwork)"
@@ -66,6 +71,7 @@ fun SettingsScreen(
     sources: Set<EpgRepository.Source>,
     onNameChange: (String) -> Unit,
     onDefaultLeadChange: (Int) -> Unit,
+    onPostcodeChange: (String) -> Unit,
     onRefresh: () -> Unit,
     onClearTaste: () -> Unit,
 ) {
@@ -120,6 +126,44 @@ fun SettingsScreen(
                 selectedMinutes = profile.defaultLeadMinutes,
                 onSelect = onDefaultLeadChange,
             )
+        }
+
+        SettingBlock(
+            "Your TV region",
+            profile.regionName?.let { "Listings for $it, from postcode ${profile.postcode}." }
+                ?: "Enter a postcode so listings match the transmitter you receive, " +
+                    "rather than a national line-up.",
+        ) {
+            var postcode by remember(profile.postcode) { mutableStateOf(profile.postcode.orEmpty()) }
+            BasicTextField(
+                value = postcode,
+                onValueChange = { postcode = it.take(10) },
+                singleLine = true,
+                textStyle = TextStyle(color = SkyPalette.TextPrimary, fontSize = 18.sp),
+                cursorBrush = SolidColor(SkyPalette.TextPrimary),
+                keyboardOptions = KeyboardOptions(
+                    capitalization = KeyboardCapitalization.Characters,
+                    imeAction = ImeAction.Done,
+                ),
+                keyboardActions = KeyboardActions(onDone = { onPostcodeChange(postcode) }),
+                decorationBox = { inner ->
+                    Box(
+                        modifier = Modifier
+                            .widthIn(max = 240.dp)
+                            .glass(shape = RoundedCornerShape(12.dp))
+                            .padding(horizontal = 14.dp, vertical = 10.dp),
+                    ) {
+                        if (postcode.isEmpty()) {
+                            BasicText(
+                                text = "Postcode",
+                                style = TextStyle(color = SkyPalette.TextTertiary, fontSize = 18.sp),
+                            )
+                        }
+                        inner()
+                    }
+                },
+            )
+            SettingChip(label = "Find my region") { onPostcodeChange(postcode) }
         }
 
         SettingBlock("Listings", describeSources(isLiveData, sources)) {

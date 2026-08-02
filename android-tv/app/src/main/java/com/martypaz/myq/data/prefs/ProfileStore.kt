@@ -15,6 +15,10 @@ private val Context.profileDataStore by preferencesDataStore(name = "profile")
 data class Profile(
     val firstName: String? = null,
     val defaultLeadMinutes: Int = Reminder.DEFAULT_LEAD_MINUTES,
+    /** Used to resolve the transmitter region for Freeview listings. */
+    val postcode: String? = null,
+    val networkId: Int? = null,
+    val regionName: String? = null,
 )
 
 class ProfileStore(private val context: Context) {
@@ -24,6 +28,9 @@ class ProfileStore(private val context: Context) {
 
     /** What the preference was called when it could only be whole hours. */
     private val legacyLeadHoursKey = intPreferencesKey("default_lead_hours")
+    private val postcodeKey = stringPreferencesKey("postcode")
+    private val networkIdKey = intPreferencesKey("network_id")
+    private val regionKey = stringPreferencesKey("region_name")
 
     val profile: Flow<Profile> = context.profileDataStore.data.map { prefs ->
         Profile(
@@ -31,11 +38,22 @@ class ProfileStore(private val context: Context) {
             defaultLeadMinutes = prefs[leadMinutesKey]
                 ?: prefs[legacyLeadHoursKey]?.times(Reminder.MINUTES_PER_HOUR)
                 ?: Reminder.DEFAULT_LEAD_MINUTES,
+            postcode = prefs[postcodeKey]?.takeIf { it.isNotBlank() },
+            networkId = prefs[networkIdKey],
+            regionName = prefs[regionKey]?.takeIf { it.isNotBlank() },
         )
     }
 
     suspend fun setFirstName(name: String) {
         context.profileDataStore.edit { it[nameKey] = name.trim() }
+    }
+
+    suspend fun setRegion(postcode: String, networkId: Int, regionName: String) {
+        context.profileDataStore.edit {
+            it[postcodeKey] = postcode.trim()
+            it[networkIdKey] = networkId
+            it[regionKey] = regionName
+        }
     }
 
     suspend fun setDefaultLeadMinutes(minutes: Int) {
