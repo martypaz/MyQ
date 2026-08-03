@@ -20,6 +20,10 @@
          its aerial receives. Runtime permission; refusal leaves the national
          guide in place. -->
     <uses-permission android:name="android.permission.READ_TV_LISTINGS" />
+    <!-- Experiment: read the television's Google account so a viewer is not
+         asked to sign in again. Since Android 8 this can be granted and still
+         return nothing, which is what a Gmail sign-in would exist to cover. -->
+    <uses-permission android:name="android.permission.GET_ACCOUNTS" />
 
     <!--
         Android 11+ hides other packages unless they are declared here. Without
