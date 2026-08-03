@@ -1,0 +1,12 @@
+# Kotlin and Gradle sources in the MyQ app are authored and committed with LF.
+# Without this, a checkout on Windows rewrites them to CRLF and every commit
+# prints a "LF will be replaced by CRLF" warning for each touched file.
+#
+# Scoped to android-tv/ deliberately: a repository-wide rule would renormalise
+# the upstream Open Design tree this fork carries, for no benefit here.
+android-tv/**/*.kt   text eol=lf
+android-tv/**/*.kts  text eol=lf
+android-tv/**/*.xml  text eol=lf
+android-tv/**/*.json text eol=lf
+android-tv/**/*.yml  text eol=lf
+android-tv/gradlew   text eol=lf
