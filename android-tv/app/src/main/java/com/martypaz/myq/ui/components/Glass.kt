@@ -103,9 +103,9 @@ fun GlassBackdrop(imageUrl: String?, modifier: Modifier = Modifier) {
                 .fillMaxSize()
                 .background(
                     Brush.verticalGradient(
-                        0f to Color(0xCC0A1738),
-                        0.55f to Color(0xD9091430),
-                        1f to Color(0xF2050A1C),
+                        0f to Color(0xCC0A4D9A),
+                        0.55f to Color(0xD905183B),
+                        1f to Color(0xF2030A1C),
                     ),
                 ),
         )
