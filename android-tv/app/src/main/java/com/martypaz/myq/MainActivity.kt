@@ -13,15 +13,28 @@ import com.martypaz.myq.ui.theme.MyQTheme
 
 class MainActivity : ComponentActivity() {
 
-    private val notificationPermission =
-        registerForActivityResult(ActivityResultContracts.RequestPermission()) { /* best effort */ }
+    private val permissions =
+        registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { granted ->
+            // The line-up was read before the grant arrived, so drop the empty
+            // answer rather than waiting for the next launch to notice.
+            if (granted[READ_TV_LISTINGS] == true) {
+                (application as MyQApp).tvLineup.invalidate()
+            }
+        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
-        }
+        permissions.launch(
+            buildList {
+                // Reading the tuner's line-up is what lets MyQ show the region
+                // this box receives, and switch channel from a programme.
+                add(READ_TV_LISTINGS)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    add(Manifest.permission.POST_NOTIFICATIONS)
+                }
+            }.toTypedArray(),
+        )
 
         setContent {
             MyQTheme {
@@ -29,5 +42,9 @@ class MainActivity : ComponentActivity() {
                 HomeScreen(viewModel)
             }
         }
+    }
+
+    private companion object {
+        const val READ_TV_LISTINGS = "android.permission.READ_TV_LISTINGS"
     }
 }

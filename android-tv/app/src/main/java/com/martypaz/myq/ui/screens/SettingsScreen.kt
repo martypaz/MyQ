@@ -17,6 +17,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -28,20 +30,48 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.martypaz.myq.data.epg.EpgRepository
 import com.martypaz.myq.data.prefs.Profile
 import com.martypaz.myq.ui.theme.SkyPalette
+import com.martypaz.myq.ui.components.LeadTimeDropdown
 import com.martypaz.myq.ui.components.glass
 
-private val LEAD_HOUR_OPTIONS = listOf(1, 2, 4, 24)
+/**
+ * MyQ merges two listings sources, and either can fail on its own. Saying
+ * which answered turns "why is this channel missing?" into something the
+ * viewer can actually see.
+ */
+private fun describeSources(isLiveData: Boolean, sources: Set<EpgRepository.Source>): String {
+    if (!isLiveData) {
+        return "Offline — showing sample listings. Check the TV's network connection."
+    }
+    val names = sources.sortedBy { it.ordinal }.map {
+        when (it) {
+            EpgRepository.Source.FREEVIEW_UK -> "Freeview (your region)"
+            EpgRepository.Source.FREEVIEW_EPG -> "Freeview EPG (full listings)"
+            EpgRepository.Source.DEVICE_TUNER -> "this TV's tuner"
+            EpgRepository.Source.TVMAZE -> "TVmaze (genres and artwork)"
+        }
+    }
+    return when {
+        names.isEmpty() -> "Live listings loaded."
+        names.size == 1 -> "Live listings from ${names[0]}. The other sources did not answer."
+        else -> "Live listings from " + names.dropLast(1).joinToString(", ") + " and ${names.last()}."
+    }
+}
 
 @Composable
 fun SettingsScreen(
     profile: Profile,
     isLiveData: Boolean,
+    sources: Set<EpgRepository.Source>,
     onNameChange: (String) -> Unit,
     onDefaultLeadChange: (Int) -> Unit,
+    onPostcodeChange: (String) -> Unit,
     onRefresh: () -> Unit,
     onClearTaste: () -> Unit,
 ) {
@@ -88,25 +118,55 @@ fun SettingsScreen(
             )
         }
 
-        SettingBlock("Default reminder", "Pre-selected when you set a new reminder.") {
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                LEAD_HOUR_OPTIONS.forEach { hours ->
-                    SettingChip(
-                        label = if (hours == 1) "1 hour" else "$hours hours",
-                        emphasised = hours == profile.defaultLeadHours,
-                    ) { onDefaultLeadChange(hours) }
-                }
-            }
+        SettingBlock(
+            "Default reminder",
+            "Used when a recording sets its own reminder, and pre-selected for a new one.",
+        ) {
+            LeadTimeDropdown(
+                selectedMinutes = profile.defaultLeadMinutes,
+                onSelect = onDefaultLeadChange,
+            )
         }
 
         SettingBlock(
-            "Listings",
-            if (isLiveData) {
-                "Live listings loaded from TVmaze."
-            } else {
-                "Offline — showing sample listings. Check the TV's network connection."
-            },
+            "Your TV region",
+            profile.regionName?.let { "Listings for $it, from postcode ${profile.postcode}." }
+                ?: "Enter a postcode so listings match the transmitter you receive, " +
+                    "rather than a national line-up.",
         ) {
+            var postcode by remember(profile.postcode) { mutableStateOf(profile.postcode.orEmpty()) }
+            BasicTextField(
+                value = postcode,
+                onValueChange = { postcode = it.take(10) },
+                singleLine = true,
+                textStyle = TextStyle(color = SkyPalette.TextPrimary, fontSize = 18.sp),
+                cursorBrush = SolidColor(SkyPalette.TextPrimary),
+                keyboardOptions = KeyboardOptions(
+                    capitalization = KeyboardCapitalization.Characters,
+                    imeAction = ImeAction.Done,
+                ),
+                keyboardActions = KeyboardActions(onDone = { onPostcodeChange(postcode) }),
+                decorationBox = { inner ->
+                    Box(
+                        modifier = Modifier
+                            .widthIn(max = 240.dp)
+                            .glass(shape = RoundedCornerShape(12.dp))
+                            .padding(horizontal = 14.dp, vertical = 10.dp),
+                    ) {
+                        if (postcode.isEmpty()) {
+                            BasicText(
+                                text = "Postcode",
+                                style = TextStyle(color = SkyPalette.TextTertiary, fontSize = 18.sp),
+                            )
+                        }
+                        inner()
+                    }
+                },
+            )
+            SettingChip(label = "Find my region") { onPostcodeChange(postcode) }
+        }
+
+        SettingBlock("Listings", describeSources(isLiveData, sources)) {
             SettingChip(label = "Refresh listings") { onRefresh() }
         }
 
@@ -117,6 +177,7 @@ fun SettingsScreen(
         ) {
             SettingChip(label = "Reset what MyQ has learned") { onClearTaste() }
         }
+
     }
 }
 

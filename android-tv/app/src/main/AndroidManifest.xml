@@ -12,6 +12,57 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!-- Android TV files notifications away in the launcher; only a full-screen
+         intent puts a reminder in front of someone watching television. -->
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+    <!-- Reads the line-up this box is actually tuned to, which is the only
+         source that knows its region, its channel numbers, and which channels
+         its aerial receives. Runtime permission; refusal leaves the national
+         guide in place. -->
+    <uses-permission android:name="android.permission.READ_TV_LISTINGS" />
+
+    <!--
+        Android 11+ hides other packages unless they are declared here. Without
+        these, "Open in <app>" cannot tell an installed streaming app from a
+        missing one and would always fall through to the store. Keep in sync
+        with the catalogue in data/streaming/StreamingApps.kt.
+    -->
+    <queries>
+        <package android:name="bbc.iplayer.android" />
+        <package android:name="uk.co.bbc.iplayer" />
+        <package android:name="air.ITVMobilePlayer" />
+        <package android:name="com.itv.itvx" />
+        <package android:name="com.channel4.ondemand" />
+        <package android:name="com.channel5.my5" />
+        <package android:name="com.my5.tv" />
+        <package android:name="com.channel5.my5tv" />
+        <package android:name="uk.co.uktv.play" />
+        <package android:name="com.uktv.play" />
+        <package android:name="uk.co.stv.player" />
+        <package android:name="tv.stv.player" />
+        <package android:name="com.netflix.ninja" />
+        <package android:name="com.netflix.mediaclient" />
+        <package android:name="com.amazon.amazonvideo.livingroom" />
+        <package android:name="com.amazon.avod.thirdpartyclient" />
+        <package android:name="com.disney.disneyplus" />
+        <package android:name="com.apple.atve.androidtv.appletv" />
+        <package android:name="com.apple.atve.sony.appletv" />
+        <package android:name="com.cbs.ott" />
+        <package android:name="com.discovery.discoveryplus.androidtv" />
+        <package android:name="com.discovery.dplay" />
+        <package android:name="com.google.android.youtube.tv" />
+        <package android:name="com.google.android.youtube" />
+
+        <!-- Browser / store fallbacks when the service's own app is absent. -->
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="https" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="market" />
+        </intent>
+    </queries>
 
     <application
         android:name=".MyQApp"
@@ -31,6 +82,18 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".reminders.ReminderActivity"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:launchMode="singleTask"
+            android:noHistory="true"
+            android:screenOrientation="landscape"
+            android:showWhenLocked="true"
+            android:taskAffinity=""
+            android:theme="@style/Theme.MyQ"
+            android:turnScreenOn="true" />
+
         <receiver
             android:name=".reminders.ReminderReceiver"
             android:exported="false" />
@@ -40,6 +103,12 @@
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+            </intent-filter>
+            <!-- Separate filter: MY_PACKAGE_REPLACED carries our own package
+                 and must not be mixed with the boot actions above. -->
+            <intent-filter>
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
             </intent-filter>
         </receiver>
     </application>

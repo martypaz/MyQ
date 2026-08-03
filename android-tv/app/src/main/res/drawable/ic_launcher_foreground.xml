@@ -1,9 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-  Adaptive-icon foreground. The mark is drawn at ~66% scale so it sits inside
-  the launcher's safe zone once the system applies its own mask and padding.
--->
+<!-- Adaptive-icon foreground with Sky Q-style myq brand mark. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
@@ -11,16 +9,54 @@
     <group
         android:pivotX="54"
         android:pivotY="54"
-        android:scaleX="0.66"
-        android:scaleY="0.66">
+        android:scaleX="0.75"
+        android:scaleY="0.75"
+        android:translateX="3"
+        android:translateY="3">
+        <!-- 'm' -->
         <path
             android:fillColor="#FFFFFF"
-            android:fillType="evenOdd"
-            android:pathData="M54,54 m-30,0 a30,30 0 1,0 60,0 a30,30 0 1,0 -60,0 Z M54,54 m-19,0 a19,19 0 1,0 38,0 a19,19 0 1,0 -38,0 Z" />
+            android:pathData="M10,34 C13,34 15.5,35.5 16.5,38.5 C17.8,35.5 20.5,34 24,34 C28.5,34 31,37 31,42.5 L31,53 L25,53 L25,43 C25,40.5 23.8,39 22,39 C20.2,39 19,40.5 19,43 L19,53 L13,53 L13,43 C13,40.5 11.8,39 10,39 C8.2,39 7,40.5 7,43 L7,53 L1,53 L1,35 L7,35 L7,37.5 C8,35.2 9.5,34 10,34 Z" />
+
+        <!-- 'y' -->
         <path
-            android:pathData="M63,63 L81,81"
-            android:strokeColor="#FFFFFF"
+            android:fillColor="#FFFFFF"
+            android:pathData="M34,35 L40.5,35 L45,45.5 L49.5,35 L56,35 L47.5,53.5 C45.5,58 42,60 37,60 L34,60 L34,54.5 L36.5,54.5 C39,54.5 40.5,53.5 41.5,51 L34,35 Z" />
+
+        <!-- 'q' body & loop -->
+        <path
+            android:fillType="evenOdd"
+            android:pathData="M73,34 C80.7,34 87,40.3 87,48 C87,51.5 85.7,54.7 83.5,57 L89.5,57 L89.5,51 L95.5,51 L95.5,61 C95.5,61 93,61 90,61 C82.5,61 77.5,58.5 73,54 C69.7,54 67,51.3 67,48 C67,40.3 73.3,34 81,34 Z M73,40 C68.6,40 65,43.6 65,48 C65,52.4 68.6,56 73,56 C77.4,56 81,52.4 81,48 C81,43.6 77.4,40 73,40 Z">
+            <aapt:attr name="android:fillColor">
+                <gradient
+                    android:startX="65"
+                    android:startY="34"
+                    android:endX="95"
+                    android:endY="61"
+                    android:type="linear">
+                    <item android:offset="0.0" android:color="#FF00E5FF" />
+                    <item android:offset="0.45" android:color="#FF2563EB" />
+                    <item android:offset="1.0" android:color="#FFF59E0B" />
+                </gradient>
+            </aapt:attr>
+        </path>
+
+        <!-- 'q' tail swoosh -->
+        <path
+            android:pathData="M80,51 L98,59"
             android:strokeLineCap="round"
-            android:strokeWidth="10" />
+            android:strokeWidth="5.5">
+            <aapt:attr name="android:strokeColor">
+                <gradient
+                    android:startX="80"
+                    android:startY="51"
+                    android:endX="98"
+                    android:endY="59"
+                    android:type="linear">
+                    <item android:offset="0.0" android:color="#FF2563EB" />
+                    <item android:offset="1.0" android:color="#FFF59E0B" />
+                </gradient>
+            </aapt:attr>
+        </path>
     </group>
 </vector>

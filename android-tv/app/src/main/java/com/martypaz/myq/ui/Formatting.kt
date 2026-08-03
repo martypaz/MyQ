@@ -31,3 +31,16 @@ fun formatSeasonEpisode(programme: Programme): String? {
         else -> null
     }
 }
+
+/** "S01 E01" style short series metadata, or null when unknown. */
+fun formatSeasonEpisodeShort(programme: Programme): String? {
+    val season = programme.season
+    val episode = programme.episode
+    return when {
+        season != null && episode != null -> String.format(java.util.Locale.US, "S%02d E%02d", season, episode)
+        season != null -> String.format(java.util.Locale.US, "S%02d", season)
+        episode != null -> String.format(java.util.Locale.US, "E%02d", episode)
+        else -> null
+    }
+}
+

@@ -1,19 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 320x180 launcher banner: MyQ mark on the app's navy gradient. -->
+<!-- 320x180 Android TV launcher banner: Sky Q-style myq brand mark on deep navy field. -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <item>
         <shape>
             <gradient
                 android:angle="315"
                 android:centerColor="#122457"
-                android:endColor="#080F26"
-                android:startColor="#2C5AB8"
+                android:endColor="#060B1D"
+                android:startColor="#1E3B7A"
                 android:type="linear" />
         </shape>
     </item>
     <item
         android:drawable="@drawable/ic_myq_logo"
         android:gravity="center"
-        android:height="86dp"
-        android:width="86dp" />
+        android:height="48dp"
+        android:width="144dp" />
 </layer-list>

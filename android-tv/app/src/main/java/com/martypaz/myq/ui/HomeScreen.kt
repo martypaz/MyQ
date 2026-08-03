@@ -35,6 +35,8 @@ import com.martypaz.myq.ui.components.HeroPanel
 import com.martypaz.myq.ui.components.NavDestination
 import com.martypaz.myq.ui.components.NavRail
 import com.martypaz.myq.ui.components.ProgrammeCard
+import com.martypaz.myq.ui.components.Clock
+import com.martypaz.myq.ui.screens.DeveloperScreen
 import com.martypaz.myq.ui.screens.ManageSeriesScreen
 import com.martypaz.myq.ui.screens.RecordingsScreen
 import com.martypaz.myq.ui.screens.SearchScreen
@@ -47,8 +49,16 @@ fun HomeScreen(viewModel: HomeViewModel) {
 
     if (state.showWelcome) {
         WelcomeScreen(
-            firstName = state.profile.firstName,
+            profile = state.profile,
+            isProfileLoaded = state.isProfileLoaded,
+            needsName = state.needsName,
+            needsRegion = state.needsRegion,
+            isResolvingRegion = state.isResolvingRegion,
+            regionError = state.regionError,
             onNameEntered = viewModel::onNameEntered,
+            onNameSkipped = viewModel::onNameSkipped,
+            onPostcodeEntered = viewModel::onPostcodeEntered,
+            onRegionSkipped = viewModel::onRegionSkipped,
             onContinue = viewModel::onWelcomeFinished,
         )
         return
@@ -62,6 +72,7 @@ fun HomeScreen(viewModel: HomeViewModel) {
             NavRail(
                 selected = state.destination,
                 onSelect = viewModel::onDestinationSelected,
+                destinations = state.destinations,
                 modifier = Modifier.padding(start = 12.dp),
             )
 
@@ -87,17 +98,32 @@ fun HomeScreen(viewModel: HomeViewModel) {
                         opinions = state.opinions,
                         onCycle = viewModel::cycleVerdict,
                     )
+                    NavDestination.DEVELOPER -> DeveloperScreen(
+                        readiness = state.reminderReadiness,
+                        message = state.developerMessage,
+                        onTestReminder = viewModel::fireTestReminder,
+                        onShowAlertNow = viewModel::showAlertNow,
+                        onRefresh = viewModel::refreshReminderReadiness,
+                    )
                     NavDestination.SETTINGS -> SettingsScreen(
                         profile = state.profile,
                         isLiveData = state.isLiveData,
+                        sources = state.sources,
                         onNameChange = viewModel::setName,
-                        onDefaultLeadChange = viewModel::setDefaultLeadHours,
+                        onDefaultLeadChange = viewModel::setDefaultLeadMinutes,
+                        onPostcodeChange = viewModel::setPostcode,
                         onRefresh = viewModel::refresh,
                         onClearTaste = viewModel::clearTaste,
                     )
                 }
             }
         }
+
+        Clock(
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .padding(start = 24.dp, bottom = 20.dp),
+        )
 
         if (!state.isLiveData && !state.isLoading) {
             OfflineBanner(modifier = Modifier.align(Alignment.TopEnd).padding(24.dp))
@@ -106,6 +132,8 @@ fun HomeScreen(viewModel: HomeViewModel) {
         state.dialog?.let { dialog ->
             ProgrammeDialog(
                 state = dialog,
+                onOpenInApp = viewModel::openInStreamingApp,
+                onTune = viewModel::tuneTo,
                 onSetReminder = viewModel::setReminder,
                 onRemoveReminder = viewModel::removeReminder,
                 onSetVerdict = viewModel::setVerdict,

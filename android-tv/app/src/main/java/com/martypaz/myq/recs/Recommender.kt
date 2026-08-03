@@ -57,7 +57,8 @@ fun recommendForYou(
         .filterNot { profile.verdictFor(it.title) == Verdict.HATE }
         .map { it to scoreProgramme(profile, it) }
         .filter { (_, score) -> score > 0.0 }
-        .sortedByDescending { (_, score) -> score }
+        .sortedWith(compareByDescending<Pair<Programme, Double>> { it.second }.thenBy { it.first.startMillis })
+        .distinctBy { it.first.title.trim().lowercase() }
         .take(limit)
         .map { (programme, _) -> programme }
 }

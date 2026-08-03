@@ -42,11 +42,57 @@ data class Reminder(
     val title: String,
     val channelName: String,
     val startMillis: Long,
-    /** How many hours before the start the notification should fire. */
-    val leadHours: Int,
+    /** How many minutes before the start the notification should fire. */
+    val leadMinutes: Int = DEFAULT_LEAD_MINUTES,
+    /**
+     * Lead time as whole hours, which is how MyQ used to store it. Present so
+     * reminders written by an older version still decode; [leadMinutes] is
+     * what everything reads.
+     */
+    @Deprecated("Superseded by leadMinutes; retained so old reminders decode.")
+    val leadHours: Int? = null,
 ) {
-    val fireAtMillis: Long get() = startMillis - leadHours * 60L * 60L * 1000L
+    /**
+     * Reminders written before lead times went sub-hourly carry only
+     * [leadHours], and a reminder that silently lost its lead time would fire
+     * at the wrong moment rather than fail loudly.
+     */
+    @Suppress("DEPRECATION")
+    val effectiveLeadMinutes: Int
+        get() = when {
+            leadMinutes != DEFAULT_LEAD_MINUTES -> leadMinutes
+            leadHours != null -> leadHours * MINUTES_PER_HOUR
+            else -> leadMinutes
+        }
+
+    val fireAtMillis: Long get() = startMillis - effectiveLeadMinutes * 60L * 1000L
+
+    companion object {
+        const val DEFAULT_LEAD_MINUTES = 60
+        const val MINUTES_PER_HOUR = 60
+    }
 }
+
+/** "5 minutes", "1 hour", "2 hours 30 minutes" — a lead time said aloud. */
+fun formatLeadTime(minutes: Int): String {
+    val hours = minutes / 60
+    val rest = minutes % 60
+    val hourPart = when (hours) {
+        0 -> null
+        1 -> "1 hour"
+        else -> "$hours hours"
+    }
+    val minutePart = when (rest) {
+        0 -> null
+        1 -> "1 minute"
+        else -> "$rest minutes"
+    }
+    return listOfNotNull(hourPart, minutePart).joinToString(" ").ifEmpty { "0 minutes" }
+}
+
+/** Offered lead times: fine-grained where it matters, coarse where it does not. */
+val LEAD_TIME_OPTIONS: List<Int> =
+    listOf(5, 10, 15, 30, 45, 60, 90, 120, 180, 240, 360, 480, 720)
 
 /**
  * A programme the user has marked to record.

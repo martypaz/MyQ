@@ -17,6 +17,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.ui.text.TextStyle
+import com.martypaz.myq.data.epg.isSeries
 import com.martypaz.myq.data.model.Newness
 import com.martypaz.myq.data.model.Programme
 import com.martypaz.myq.ui.formatSeasonEpisode
@@ -72,6 +73,17 @@ fun HeroPanel(
                     text = if (programme.newness == Newness.NEW_SERIES) "NEW SERIES" else "NEW SEASON",
                     style = TextStyle(
                         color = SkyPalette.AccentBadge,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 1.5.sp,
+                    ),
+                )
+            } else if (programme.isSeries()) {
+                Spacer(Modifier.width(14.dp))
+                BasicText(
+                    text = "SERIES",
+                    style = TextStyle(
+                        color = SkyPalette.TextSecondary,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 1.5.sp,

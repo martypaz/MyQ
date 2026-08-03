@@ -36,4 +36,13 @@ class FormattingTest {
         assertTrue(label, label.startsWith("Today") || label.startsWith("Tomorrow"))
         assertTrue(label, Regex("\\d{2}:\\d{2}$").containsMatchIn(label))
     }
+
+    @Test
+    fun `short season and episode formats as S01 E01`() {
+        assertEquals("S01 E01", formatSeasonEpisodeShort(programme(season = 1, episode = 1)))
+        assertEquals("S06 E03", formatSeasonEpisodeShort(programme(season = 6, episode = 3)))
+        assertEquals("E03", formatSeasonEpisodeShort(programme(season = null, episode = 3)))
+        assertEquals("S02", formatSeasonEpisodeShort(programme(season = 2, episode = null)))
+        assertNull(formatSeasonEpisodeShort(programme(season = null, episode = null)))
+    }
 }

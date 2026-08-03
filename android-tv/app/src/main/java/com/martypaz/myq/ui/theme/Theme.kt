@@ -15,30 +15,30 @@ import androidx.compose.ui.graphics.Color
  * pane. Solid fills are reserved for badges, which must stay legible.
  */
 object SkyPalette {
-    val TopGlow = Color(0xFF2C5AB8)
-    val UpperBlue = Color(0xFF1B3B7A)
-    val MidBlue = Color(0xFF122457)
-    val DeepNavy = Color(0xFF080F26)
+    val TopGlow = Color(0xFF0073E6)       // Sky Royal Blue top glow
+    val UpperBlue = Color(0xFF0C4180)     // Upper royal blue
+    val MidBlue = Color(0xFF0B2545)       // Deep mid blue
+    val DeepNavy = Color(0xFF041029)      // Base deep blue field
 
-    val TextPrimary = Color(0xFFF4F7FF)
-    val TextSecondary = Color(0xCCE6EDFF)
-    val TextTertiary = Color(0x99D7E1FF)
+    val TextPrimary = Color(0xFFFFFFFF)
+    val TextSecondary = Color(0xDDF0F6FF)
+    val TextTertiary = Color(0x99D0E2FF)
 
     /**
      * Legacy flat surfaces. New UI should prefer `Modifier.glass()`; these
      * remain for the few places that need an opaque backing.
      */
-    val CardBackground = Color(0x1FFFFFFF)
-    val CardFocused = Color(0x3DFFFFFF)
+    val CardBackground = Color(0x2EFFFFFF)
+    val CardFocused = Color(0x52FFFFFF)
     val FocusRing = Color(0xFFFFFFFF)
 
-    /** Panel behind modal content — darker so the glass above it reads. */
-    val ScrimDeep = Color(0xE60A1024)
+    /** Panel behind modal content — translucent royal blue glass. */
+    val ScrimDeep = Color(0xEB0A1D3A)
 
-    val AccentBadge = Color(0xFFF2A93B)   // "New series" amber, like Sky's highlight chips
-    val ReminderBadge = Color(0xFF41C7C7) // teal for reminder-set state
-    val RecordBadge = Color(0xFFE2574C)   // record red, the universal PVR colour
-    val HateBadge = Color(0xFF8E9BC4)     // muted: hiding something is not an alarm
+    val AccentBadge = Color(0xFFFFB300)   // Sky highlight gold
+    val ReminderBadge = Color(0xFF00E5FF) // Sky bright cyan
+    val RecordBadge = Color(0xFFFF3D00)   // PVR record red
+    val HateBadge = Color(0x9994A3B8)     // Muted state badge
 }
 
 @Composable

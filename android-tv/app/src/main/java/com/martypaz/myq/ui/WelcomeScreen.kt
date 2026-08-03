@@ -2,8 +2,8 @@ package com.martypaz.myq.ui
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
@@ -37,34 +37,45 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.foundation.Image
 import com.martypaz.myq.R
+import com.martypaz.myq.data.prefs.Profile
 import com.martypaz.myq.ui.components.StarField
+import com.martypaz.myq.ui.components.glass
 import com.martypaz.myq.ui.theme.SkyPalette
 import kotlinx.coroutines.delay
-import com.martypaz.myq.ui.components.glass
 
 /**
- * First thing MyQ shows: the parallax starfield behind either a name prompt
- * (first run) or a short "Welcome back" that dismisses itself.
+ * First run, one question at a time: a name, then a postcode, then out of the
+ * way. Returning viewers get a short "welcome back" that dismisses itself.
+ *
+ * The postcode is asked for because it is the only way to know which
+ * transmitter region this television receives, and so which listings are the
+ * right ones. Both questions can be skipped — a viewer who declines gets a
+ * national guide and no greeting, which is worse than the alternative but
+ * better than being held at a form.
  */
 @Composable
 fun WelcomeScreen(
-    firstName: String?,
+    profile: Profile,
+    isProfileLoaded: Boolean,
+    needsName: Boolean,
+    needsRegion: Boolean,
+    isResolvingRegion: Boolean,
+    regionError: String?,
     onNameEntered: (String) -> Unit,
+    onNameSkipped: () -> Unit,
+    onPostcodeEntered: (String) -> Unit,
+    onRegionSkipped: () -> Unit,
     onContinue: () -> Unit,
 ) {
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0xFF05091C)),
+        modifier = Modifier.fillMaxSize().background(Color(0xFF05091C)),
         contentAlignment = Alignment.Center,
     ) {
         StarField(modifier = Modifier.fillMaxSize())
-
-        // The starfield is the backdrop here; the panel below is the glass.
 
         val fade by animateFloatAsState(
             targetValue = 1f,
@@ -86,82 +97,143 @@ fun WelcomeScreen(
                 modifier = Modifier.size(96.dp),
             )
 
-            if (firstName == null) {
-                NamePrompt(onNameEntered = onNameEntered)
-            } else {
-                WelcomeBack(firstName = firstName, onContinue = onContinue)
+            when {
+                // A null name means "none saved", which is indistinguishable
+                // from "not looked yet" — acting early opened the keyboard at
+                // someone the app already knew.
+                !isProfileLoaded -> Unit
+
+                needsName -> NamePrompt(onNameEntered = onNameEntered, onSkip = onNameSkipped)
+
+                needsRegion -> PostcodePrompt(
+                    firstName = profile.firstName,
+                    isResolving = isResolvingRegion,
+                    error = regionError,
+                    onPostcodeEntered = onPostcodeEntered,
+                    onSkip = onRegionSkipped,
+                )
+
+                else -> WelcomeBack(profile = profile, onContinue = onContinue)
             }
         }
     }
 }
 
 @Composable
-private fun WelcomeBack(firstName: String, onContinue: () -> Unit) {
-    BasicText(
-        text = "Welcome back, $firstName",
-        style = TextStyle(
-            color = SkyPalette.TextPrimary,
-            fontSize = 40.sp,
-            fontWeight = FontWeight.Bold,
-        ),
-    )
-    BasicText(
-        text = "Finding what's new for you…",
-        style = TextStyle(color = SkyPalette.TextSecondary, fontSize = 17.sp),
+private fun WelcomeBack(profile: Profile, onContinue: () -> Unit) {
+    Heading(profile.firstName?.let { "Welcome back, $it" } ?: "Welcome back")
+    Subheading(
+        profile.regionName?.let { "Finding what's new for you in $it…" }
+            ?: "Finding what's new for you…",
     )
 
     // Auto-advance, so a returning viewer never has to press anything.
-    LaunchedEffect(firstName) {
+    LaunchedEffect(Unit) {
         delay(2_200)
         onContinue()
     }
 }
 
 @Composable
-private fun NamePrompt(onNameEntered: (String) -> Unit) {
+private fun NamePrompt(onNameEntered: (String) -> Unit, onSkip: () -> Unit) {
     var name by remember { mutableStateOf("") }
-    val focusRequester = remember { FocusRequester() }
-    LaunchedEffect(Unit) { focusRequester.requestFocus() }
 
-    BasicText(
-        text = "Welcome to MyQ",
-        style = TextStyle(
-            color = SkyPalette.TextPrimary,
-            fontSize = 40.sp,
-            fontWeight = FontWeight.Bold,
-        ),
-    )
-    BasicText(
-        text = "What should we call you?",
-        style = TextStyle(color = SkyPalette.TextSecondary, fontSize = 17.sp),
-    )
+    Heading("Welcome to MyQ")
+    Subheading("What should we call you?")
 
-    val fieldInteraction = remember { MutableInteractionSource() }
-    val fieldFocused by fieldInteraction.collectIsFocusedAsState()
-
-    BasicTextField(
+    PromptField(
         value = name,
         onValueChange = { name = it.take(24) },
+        placeholder = "First name",
+        capitalization = KeyboardCapitalization.Sentences,
+        onSubmit = { if (name.isNotBlank()) onNameEntered(name.trim()) },
+    )
+
+    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        WelcomeButton(label = "Continue", enabled = name.isNotBlank()) {
+            onNameEntered(name.trim())
+        }
+        WelcomeButton(label = "Skip", onClick = onSkip)
+    }
+}
+
+@Composable
+private fun PostcodePrompt(
+    firstName: String?,
+    isResolving: Boolean,
+    error: String?,
+    onPostcodeEntered: (String) -> Unit,
+    onSkip: () -> Unit,
+) {
+    var postcode by remember { mutableStateOf("") }
+
+    Heading(firstName?.let { "Nearly there, $it" } ?: "Nearly there")
+    Subheading(
+        error
+            ?: "Your postcode tells us which transmitter you receive, so the guide " +
+            "matches the channels your aerial actually gets.",
+    )
+
+    PromptField(
+        value = postcode,
+        onValueChange = { postcode = it.take(10) },
+        placeholder = "Postcode",
+        capitalization = KeyboardCapitalization.Characters,
+        onSubmit = { if (postcode.isNotBlank()) onPostcodeEntered(postcode.trim()) },
+    )
+
+    if (isResolving) {
+        Subheading("Looking up your region…")
+    }
+
+    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        WelcomeButton(label = "Continue", enabled = postcode.isNotBlank() && !isResolving) {
+            onPostcodeEntered(postcode.trim())
+        }
+        WelcomeButton(label = "Skip", onClick = onSkip)
+    }
+}
+
+@Composable
+private fun PromptField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    placeholder: String,
+    capitalization: KeyboardCapitalization,
+    onSubmit: () -> Unit,
+) {
+    val focusRequester = remember { FocusRequester() }
+    LaunchedEffect(placeholder) { focusRequester.requestFocus() }
+
+    val interaction = remember { MutableInteractionSource() }
+    val isFocused by interaction.collectIsFocusedAsState()
+
+    BasicTextField(
+        value = value,
+        onValueChange = onValueChange,
         singleLine = true,
-        interactionSource = fieldInteraction,
+        interactionSource = interaction,
         textStyle = TextStyle(
             color = SkyPalette.TextPrimary,
             fontSize = 22.sp,
             fontWeight = FontWeight.Medium,
         ),
         cursorBrush = SolidColor(SkyPalette.TextPrimary),
-        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-        keyboardActions = KeyboardActions(onDone = { submit(name, onNameEntered) }),
+        keyboardOptions = KeyboardOptions(
+            capitalization = capitalization,
+            imeAction = ImeAction.Done,
+        ),
+        keyboardActions = KeyboardActions(onDone = { onSubmit() }),
         decorationBox = { inner ->
             Box(
                 modifier = Modifier
                     .width(360.dp)
-                    .glass(focused = fieldFocused, shape = RoundedCornerShape(12.dp))
+                    .glass(focused = isFocused, shape = RoundedCornerShape(12.dp))
                     .padding(horizontal = 16.dp, vertical = 12.dp),
             ) {
-                if (name.isEmpty()) {
+                if (value.isEmpty()) {
                     BasicText(
-                        text = "First name",
+                        text = placeholder,
                         style = TextStyle(color = SkyPalette.TextTertiary, fontSize = 22.sp),
                     )
                 }
@@ -170,17 +242,26 @@ private fun NamePrompt(onNameEntered: (String) -> Unit) {
         },
         modifier = Modifier.focusRequester(focusRequester),
     )
-
-    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        WelcomeButton(label = "Continue", enabled = name.isNotBlank()) {
-            submit(name, onNameEntered)
-        }
-        WelcomeButton(label = "Skip") { onNameEntered("") }
-    }
 }
 
-private fun submit(name: String, onNameEntered: (String) -> Unit) {
-    if (name.isNotBlank()) onNameEntered(name.trim())
+@Composable
+private fun Heading(text: String) {
+    BasicText(
+        text = text,
+        style = TextStyle(
+            color = SkyPalette.TextPrimary,
+            fontSize = 40.sp,
+            fontWeight = FontWeight.Bold,
+        ),
+    )
+}
+
+@Composable
+private fun Subheading(text: String) {
+    BasicText(
+        text = text,
+        style = TextStyle(color = SkyPalette.TextSecondary, fontSize = 17.sp, lineHeight = 24.sp),
+    )
 }
 
 @Composable

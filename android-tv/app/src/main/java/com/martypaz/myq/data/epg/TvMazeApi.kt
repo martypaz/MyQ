@@ -13,6 +13,9 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.time.LocalDate
 import java.time.OffsetDateTime
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import java.time.temporal.ChronoUnit
 
 /**
@@ -103,33 +106,6 @@ internal fun deriveNewness(
     }
 }
 
-/**
- * Matches a TVmaze network name against the UK Freeview line-up. Matching is
- * case-insensitive and ignores UKTV's "U&" rebrand prefix ("U&Dave" ≡ "Dave")
- * so the allowlist survives either naming.
- */
-internal fun isFreeviewChannel(name: String): Boolean =
-    normaliseChannel(name) in NORMALISED_FREEVIEW_CHANNELS
-
-private fun normaliseChannel(name: String): String =
-    name.trim().removePrefix("U&").removePrefix("u&").lowercase()
-
-/** Names as TVmaze reports them for the main UK Freeview line-up. */
-val FREEVIEW_CHANNELS: Set<String> = setOf(
-    "BBC One", "BBC Two", "BBC Three", "BBC Four", "CBBC", "CBeebies",
-    "BBC News", "ITV", "ITV1", "ITV2", "ITV3", "ITV4", "ITVBe",
-    "Channel 4", "E4", "More4", "Film4", "4seven",
-    "Channel 5", "5USA", "5STAR", "5SELECT", "5ACTION",
-    "Dave", "Drama", "Yesterday", "W", "Quest", "Quest Red",
-    "Really", "DMAX", "Food Network", "HGTV", "Blaze",
-    "Sky Arts", "Sky Mix", "Challenge", "Pick", "GREAT! TV",
-    "Legend", "That's TV", "Together TV", "PBS America", "Talking Pictures TV",
-    "London Live", "GB News", "TalkTV", "S4C", "STV",
-)
-
-private val NORMALISED_FREEVIEW_CHANNELS: Set<String> =
-    FREEVIEW_CHANNELS.map(::normaliseChannel).toSet()
-
 // --- TVmaze wire types (subset) ---
 
 @Serializable
@@ -166,3 +142,35 @@ data class TvMazeChannel(val name: String? = null)
 
 @Serializable
 data class TvMazeImage(val medium: String? = null, val original: String? = null)
+
+/**
+ * [TvMazeApi] as a uniform listings source.
+ *
+ * TVmaze is queried a day at a time, so the window is turned into one request
+ * per day and those run concurrently — serially, the wait grew with the window.
+ */
+class TvMazeSource(private val api: TvMazeApi) : EpgSource {
+
+    override val source = EpgRepository.Source.TVMAZE
+
+    override suspend fun listings(fromMillis: Long, toMillis: Long): List<Programme> = coroutineScope {
+        val days = ((toMillis - fromMillis) / MILLIS_PER_DAY).toInt().coerceIn(1, MAX_DAYS)
+        val today = LocalDate.now()
+        (0 until days)
+            .map { offset ->
+                async {
+                    runCatching { api.schedule(today.plusDays(offset.toLong())) }
+                        .getOrDefault(emptyList())
+                }
+            }
+            .awaitAll()
+            .flatten()
+            .distinctBy { it.id }
+            .filter { it.startMillis in fromMillis..toMillis }
+    }
+
+    private companion object {
+        const val MILLIS_PER_DAY = 24L * 60L * 60L * 1000L
+        const val MAX_DAYS = 21
+    }
+}
