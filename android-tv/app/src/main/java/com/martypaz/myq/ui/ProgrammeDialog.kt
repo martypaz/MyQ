@@ -38,12 +38,14 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.martypaz.myq.data.epg.isSeries
 import com.martypaz.myq.data.model.Newness
 import com.martypaz.myq.data.model.Programme
 import com.martypaz.myq.data.model.Verdict
 import com.martypaz.myq.data.streaming.StreamingApp
 import com.martypaz.myq.data.tv.TvChannel
 import com.martypaz.myq.ui.components.LeadTimeDropdown
+import com.martypaz.myq.ui.components.ProgrammeImage
 import com.martypaz.myq.ui.components.glass
 import com.martypaz.myq.ui.theme.SkyPalette
 
@@ -201,27 +203,10 @@ private fun Header(state: ProgrammeDialogState) {
                 .glass(shape = RoundedCornerShape(10.dp)),
             contentAlignment = Alignment.Center,
         ) {
-            if (programme.imageUrl != null) {
-                AsyncImage(
-                    model = programme.imageUrl,
-                    contentDescription = programme.title,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize(),
-                )
-            } else {
-                // No artwork: the channel ident still tells the viewer where they are.
-                BasicText(
-                    text = programme.channelName,
-                    style = TextStyle(
-                        color = SkyPalette.TextTertiary,
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.SemiBold,
-                    ),
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.padding(horizontal = 12.dp),
-                )
-            }
+            ProgrammeImage(
+                programme = programme,
+                modifier = Modifier.fillMaxSize(),
+            )
         }
 
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -293,10 +278,10 @@ private fun MetaLine(state: ProgrammeDialogState) {
                 letterSpacing = 0.8.sp,
             ),
         )
-        when (programme.newness) {
-            Newness.NEW_SERIES -> Badge("NEW SERIES", SkyPalette.AccentBadge)
-            Newness.NEW_SEASON -> Badge("NEW SEASON", SkyPalette.AccentBadge)
-            else -> Unit
+        when {
+            programme.newness == Newness.NEW_SERIES -> Badge("NEW SERIES", SkyPalette.AccentBadge)
+            programme.newness == Newness.NEW_SEASON -> Badge("NEW SEASON", SkyPalette.AccentBadge)
+            programme.isSeries() -> Badge("SERIES", SkyPalette.TextSecondary)
         }
         if (state.existingLeadMinutes != null) Badge("⏰ REMINDER SET", SkyPalette.ReminderBadge)
         if (state.isRecording || state.isSeriesRecording) Badge("● RECORDING", SkyPalette.RecordBadge)

@@ -33,8 +33,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.martypaz.myq.data.epg.isLikelyFilm
+import com.martypaz.myq.data.epg.isSeries
 import com.martypaz.myq.data.model.Newness
 import com.martypaz.myq.data.model.Programme
+import com.martypaz.myq.ui.formatSeasonEpisodeShort
 import com.martypaz.myq.ui.formatStart
 import com.martypaz.myq.ui.theme.SkyPalette
 
@@ -71,14 +73,10 @@ fun ProgrammeCard(
                 indication = null,
             ) { onSelected(programme) },
     ) {
-        programme.imageUrl?.let { url ->
-            AsyncImage(
-                model = url,
-                contentDescription = programme.title,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize(),
-            )
-        }
+        ProgrammeImage(
+            programme = programme,
+            modifier = Modifier.fillMaxSize(),
+        )
 
         // Bottom scrim so the title stays readable over any image.
         Box(
@@ -106,6 +104,7 @@ fun ProgrammeCard(
             programme.newness == Newness.NEW_SEASON -> "NEW SEASON" to SkyPalette.AccentBadge
             // Type, not state — so it yields to anything the user has set.
             programme.isLikelyFilm() -> "🎬 FILM" to SkyPalette.TextSecondary
+            programme.isSeries() -> "SERIES" to SkyPalette.TextSecondary
             else -> null
         }
         badge?.let { (label, color) ->
@@ -143,8 +142,12 @@ fun ProgrammeCard(
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.align(Alignment.BottomStart).padding(bottom = 16.dp),
             )
+            val metaText = listOfNotNull(
+                formatStart(programme.startMillis),
+                formatSeasonEpisodeShort(programme),
+            ).joinToString("  ·  ")
             BasicText(
-                text = formatStart(programme.startMillis),
+                text = metaText,
                 style = TextStyle(color = SkyPalette.TextTertiary, fontSize = 11.sp),
                 modifier = Modifier.align(Alignment.BottomStart),
             )

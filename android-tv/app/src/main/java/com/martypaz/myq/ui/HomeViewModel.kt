@@ -16,6 +16,7 @@ import com.martypaz.myq.data.model.RecordEntry
 import com.martypaz.myq.data.model.Reminder
 import com.martypaz.myq.data.model.Verdict
 import com.martypaz.myq.data.epg.EpgRepository
+import com.martypaz.myq.data.epg.deduplicateSoonest
 import com.martypaz.myq.data.epg.isLikelyFilm
 import com.martypaz.myq.data.epg.isOnNow
 import com.martypaz.myq.data.epg.isScheduleFiller
@@ -493,6 +494,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         // A hated series should not resurface anywhere MyQ is making suggestions.
         val visible = all.filterNot { taste.verdictFor(it.title) == Verdict.HATE }
             .let(::worthBrowsing)
+            .deduplicateSoonest()
 
         val tonightEnd = LocalDate.now().plusDays(1).atTime(LocalTime.of(6, 0))
             .atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()

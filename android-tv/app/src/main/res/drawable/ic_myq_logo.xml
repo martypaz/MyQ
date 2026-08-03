@@ -1,17 +1,56 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- The MyQ mark: a ring with a tail, echoing the Q of the Sky Q homage. -->
+<!-- Authentic Sky Q-style myq brand wordmark and logo mark. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="108dp"
-    android:height="108dp"
-    android:viewportWidth="108"
-    android:viewportHeight="108">
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="120dp"
+    android:height="40dp"
+    android:viewportWidth="120"
+    android:viewportHeight="40">
+
+    <!-- 'm' in rounded bold Sky typography -->
     <path
         android:fillColor="#FFFFFF"
-        android:fillType="evenOdd"
-        android:pathData="M54,54 m-30,0 a30,30 0 1,0 60,0 a30,30 0 1,0 -60,0 Z M54,54 m-19,0 a19,19 0 1,0 38,0 a19,19 0 1,0 -38,0 Z" />
+        android:pathData="M10,14 C13,14 15.5,15.5 16.5,18.5 C17.8,15.5 20.5,14 24,14 C28.5,14 31,17 31,22.5 L31,33 L25,33 L25,23 C25,20.5 23.8,19 22,19 C20.2,19 19,20.5 19,23 L19,33 L13,33 L13,23 C13,20.5 11.8,19 10,19 C8.2,19 7,20.5 7,23 L7,33 L1,33 L1,15 L7,15 L7,17.5 C8,15.2 9.5,14 10,14 Z" />
+
+    <!-- 'y' in rounded Sky typography -->
     <path
-        android:pathData="M63,63 L81,81"
-        android:strokeColor="#FFFFFF"
+        android:fillColor="#FFFFFF"
+        android:pathData="M34,15 L40.5,15 L45,25.5 L49.5,15 L56,15 L47.5,33.5 C45.5,38 42,40 37,40 L34,40 L34,34.5 L36.5,34.5 C39,34.5 40.5,33.5 41.5,31 L34,15 Z" />
+
+    <!-- 'q' body & loop with Sky Q signature gradient -->
+    <path
+        android:fillType="evenOdd"
+        android:pathData="M73,14 C80.7,14 87,20.3 87,28 C87,31.5 85.7,34.7 83.5,37 L89.5,37 L89.5,31 L95.5,31 L95.5,41 C95.5,41 93,41 90,41 C82.5,41 77.5,38.5 73,34 C69.7,34 67,31.3 67,28 C67,20.3 73.3,14 81,14 Z M73,20 C68.6,20 65,23.6 65,28 C65,32.4 68.6,36 73,36 C77.4,36 81,32.4 81,28 C81,23.6 77.4,20 73,20 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="65"
+                android:startY="14"
+                android:endX="95"
+                android:endY="41"
+                android:type="linear">
+                <item android:offset="0.0" android:color="#FF00E5FF" />
+                <item android:offset="0.45" android:color="#FF2563EB" />
+                <item android:offset="1.0" android:color="#FFF59E0B" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- 'q' signature tail glow swoosh -->
+    <path
+        android:pathData="M80,31 L98,39"
         android:strokeLineCap="round"
-        android:strokeWidth="10" />
+        android:strokeWidth="5.5">
+        <aapt:attr name="android:strokeColor">
+            <gradient
+                android:startX="80"
+                android:startY="31"
+                android:endX="98"
+                android:endY="39"
+                android:type="linear">
+                <item android:offset="0.0" android:color="#FF2563EB" />
+                <item android:offset="1.0" android:color="#FFF59E0B" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
 </vector>

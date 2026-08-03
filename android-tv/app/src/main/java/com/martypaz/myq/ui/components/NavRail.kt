@@ -30,6 +30,13 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import com.martypaz.myq.R
 import com.martypaz.myq.ui.theme.SkyPalette
 
 /** The sections reachable from the left-hand navigation. */
@@ -70,6 +77,24 @@ fun NavRail(
             .padding(vertical = 24.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 12.dp, end = 8.dp, top = 4.dp, bottom = 4.dp)
+                .height(26.dp),
+            contentAlignment = Alignment.CenterStart,
+        ) {
+            Image(
+                painter = painterResource(R.drawable.ic_myq_logo),
+                contentDescription = "MyQ",
+                contentScale = ContentScale.Fit,
+                modifier = Modifier
+                    .width(if (expanded) 96.dp else 46.dp)
+                    .height(24.dp),
+            )
+        }
+        Spacer(Modifier.height(4.dp))
+
         destinations.forEach { destination ->
             NavItem(
                 destination = destination,

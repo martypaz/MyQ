@@ -2,6 +2,7 @@ package com.martypaz.myq.data.epg
 
 import com.martypaz.myq.data.model.Platform
 import com.martypaz.myq.data.model.Programme
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -79,5 +80,27 @@ class ProgrammeTypeTest {
         assertTrue(programme("..programmes start at 6.00am").isScheduleFiller())
         assertTrue(programme("").isScheduleFiller())
         assertFalse(programme("Gogglebox").isScheduleFiller())
+    }
+
+    @Test
+    fun `series programmes are identified correctly`() {
+        assertTrue(programme("Emmerdale", runtime = 30).isSeries())
+        assertTrue(programme("Vera", runtime = 110, season = 5, episode = 3).isSeries())
+        assertFalse(programme("Women Talking", runtime = 95).isSeries())
+        assertFalse(programme("Teleshopping", runtime = 120).isSeries())
+    }
+
+    @Test
+    fun `deduplicateSoonest keeps only the episode airing soonest for each title`() {
+        val ep1 = programme("Emmerdale", runtime = 30).copy(id = "e1", startMillis = 2_000L)
+        val ep2 = programme("Emmerdale", runtime = 30).copy(id = "e2", startMillis = 1_000L)
+        val ep3 = programme("Emmerdale", runtime = 30).copy(id = "e3", startMillis = 3_000L)
+        val other = programme("Vera", runtime = 110, season = 1, episode = 1).copy(id = "v1", startMillis = 1_500L)
+
+        val deduplicated = listOf(ep1, ep2, ep3, other).deduplicateSoonest()
+
+        assertEquals(2, deduplicated.size)
+        assertEquals("e2", deduplicated[0].id)
+        assertEquals("v1", deduplicated[1].id)
     }
 }

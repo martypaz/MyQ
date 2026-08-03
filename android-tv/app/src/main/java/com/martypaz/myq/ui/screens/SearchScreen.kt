@@ -25,6 +25,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.martypaz.myq.data.epg.deduplicateSoonest
 import com.martypaz.myq.data.model.Platform
 import com.martypaz.myq.data.model.Programme
 import com.martypaz.myq.ui.formatStart
@@ -114,5 +115,5 @@ fun searchProgrammes(programmes: List<Programme>, query: String): List<Programme
             programme.episodeTitle?.lowercase()?.contains(needle) == true ||
             programme.channelName.lowercase().contains(needle) ||
             programme.genres.any { it.lowercase().contains(needle) }
-    }.take(60)
+    }.deduplicateSoonest().take(60)
 }

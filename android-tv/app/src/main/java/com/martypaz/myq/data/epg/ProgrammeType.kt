@@ -29,6 +29,23 @@ fun Programme.isLikelyFilm(): Boolean {
 }
 
 /**
+ * Whether a programme is a series (as opposed to a film or schedule filler).
+ */
+fun Programme.isSeries(): Boolean {
+    if (isScheduleFiller() || isLikelyFilm()) return false
+    return true
+}
+
+/**
+ * Deduplicates a list of programmes by title, keeping only the occurrence
+ * airing soonest (the one with the earliest [Programme.startMillis]).
+ */
+fun List<Programme>.deduplicateSoonest(): List<Programme> =
+    sortedBy { it.startMillis }
+        .distinctBy { it.title.trim().lowercase() }
+
+
+/**
  * Continuity slates, shopping blocks and overnight filler. They occupy long
  * unnumbered slots, which is exactly the shape of a film, so they have to be
  * named to be excluded.

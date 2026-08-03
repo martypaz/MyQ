@@ -1,7 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
-<shape xmlns:android="http://schemas.android.com/apk/res/android">
-    <gradient
-        android:angle="315"
-        android:startColor="#1E4CA8"
-        android:endColor="#0B1B45" />
-</shape>
+<!-- Rich Sky Q-inspired background with subtle radial glow. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:pathData="M0,0H108V108H0Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:centerX="54"
+                android:centerY="40"
+                android:gradientRadius="75"
+                android:type="radial">
+                <item android:offset="0.0" android:color="#FF1E3B7A" />
+                <item android:offset="0.6" android:color="#FF122457" />
+                <item android:offset="1.0" android:color="#FF060B1D" />
+            </gradient>
+        </aapt:attr>
+    </path>
+</vector>
