@@ -30,6 +30,7 @@ import com.martypaz.myq.recs.Recommender
 import com.martypaz.myq.reminders.ReminderReadiness
 import com.martypaz.myq.reminders.checkReminderReadiness
 import com.martypaz.myq.reminders.showAlertNow
+import com.martypaz.myq.reminders.migrateRecordingIds
 import com.martypaz.myq.reminders.migrateReminderIds
 import com.martypaz.myq.ui.components.NavDestination
 import com.martypaz.myq.ui.screens.SeriesOpinion
@@ -152,6 +153,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                 // card the user has already flagged never appears unflagged.
                 if (result.isLive) {
                     migrateReminderIds(app.reminderStore, app.reminderScheduler, result.programmes)
+                    migrateRecordingIds(app.recordingStore, result.programmes)
                 }
 
                 programmes.value = result.programmes

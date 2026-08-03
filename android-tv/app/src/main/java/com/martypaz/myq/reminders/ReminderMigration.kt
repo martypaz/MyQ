@@ -1,12 +1,11 @@
 package com.martypaz.myq.reminders
 
+import com.martypaz.myq.data.epg.Remap
 import com.martypaz.myq.data.epg.broadcastKey
+import com.martypaz.myq.data.epg.remapToCurrentListings
 import com.martypaz.myq.data.model.Programme
 import com.martypaz.myq.data.model.Reminder
 import com.martypaz.myq.data.prefs.ReminderStore
-
-/** A stored reminder and the same reminder repointed at the current listings. */
-data class ReminderRemap(val from: Reminder, val to: Reminder)
 
 /**
  * Reattaches reminders whose programme id no longer exists.
@@ -24,35 +23,24 @@ data class ReminderRemap(val from: Reminder, val to: Reminder)
  *
  * Pure, so the matching is testable without a store or an alarm manager.
  */
-fun remapReminders(reminders: List<Reminder>, programmes: List<Programme>): List<ReminderRemap> {
-    if (reminders.isEmpty() || programmes.isEmpty()) return emptyList()
-
-    val knownIds = programmes.mapTo(HashSet(programmes.size)) { it.id }
-    val byBroadcast = programmes.associateBy(::broadcastKey)
-    val claimed = HashSet<String>()
-
-    return reminders.mapNotNull { reminder ->
-        // Still recognised: leave it alone.
-        if (reminder.programmeId in knownIds) return@mapNotNull null
-
-        val match = byBroadcast[broadcastKey(reminder.channelName, reminder.title, reminder.startMillis)]
-            ?: return@mapNotNull null
-        if (match.id == reminder.programmeId) return@mapNotNull null
-        // Two stale reminders for one broadcast would collide on the new id.
-        if (!claimed.add(match.id)) return@mapNotNull null
-
-        ReminderRemap(
-            from = reminder,
-            to = reminder.copy(
-                programmeId = match.id,
-                // The matched listing is now the authority on when it starts,
-                // which is what the alarm is set from.
-                channelName = match.channelName,
-                startMillis = match.startMillis,
-            ),
+fun remapReminders(
+    reminders: List<Reminder>,
+    programmes: List<Programme>,
+): List<Remap<Reminder>> = remapToCurrentListings(
+    saved = reminders,
+    programmes = programmes,
+    idOf = { it.programmeId },
+    keyOf = { broadcastKey(it.channelName, it.title, it.startMillis) },
+    repoint = { reminder, match ->
+        reminder.copy(
+            programmeId = match.id,
+            // The matched listing is now the authority on when it starts,
+            // which is what the alarm is set from.
+            channelName = match.channelName,
+            startMillis = match.startMillis,
         )
-    }
-}
+    },
+)
 
 /**
  * Applies [remapReminders] to the stored reminders and their alarms.
