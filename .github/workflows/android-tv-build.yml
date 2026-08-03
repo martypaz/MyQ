@@ -2,8 +2,14 @@ name: Android TV build
 
 on:
   push:
-    branches: ["main", "claude/android-tv-freeview-app-8qnz03"]
+    branches: ["main"]
     paths: ["android-tv/**", ".github/workflows/android-tv-build.yml"]
+  # Deliberately unfiltered by path. This job is a required check on main, and
+  # a required check that never runs is reported as pending forever, which
+  # blocks the pull request instead of passing it. Every PR must produce a
+  # verdict, including ones that touch no Android code.
+  pull_request:
+    branches: ["main"]
   workflow_dispatch:
 
 jobs:
