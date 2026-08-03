@@ -53,6 +53,11 @@ data class HomeUiState(
     val sources: Set<EpgRepository.Source> = emptySet(),
     val showWelcome: Boolean = true,
     val profile: Profile = Profile(),
+    /** Session-only: the viewer declined a question rather than answering it. */
+    val nameSkipped: Boolean = false,
+    val regionSkipped: Boolean = false,
+    val isResolvingRegion: Boolean = false,
+    val regionError: String? = null,
     /** False until the stored profile has been read; see [showWelcome]. */
     val isProfileLoaded: Boolean = false,
     val destination: NavDestination = NavDestination.HOME,
@@ -73,6 +78,10 @@ data class HomeUiState(
     /** One-off feedback from a developer action. */
     val developerMessage: String? = null,
 ) {
+    /** Onboarding asks for whichever of these is still missing. */
+    val needsName: Boolean get() = isProfileLoaded && profile.firstName == null && !nameSkipped
+    val needsRegion: Boolean get() = isProfileLoaded && profile.networkId == null && !regionSkipped
+
     /** Developer is only listed when it is reachable. */
     val destinations: List<NavDestination>
         get() = NavDestination.entries.filter { it != NavDestination.DEVELOPER || isDeveloperMode }
@@ -236,10 +245,46 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         _uiState.value = _uiState.value.copy(showWelcome = false)
     }
 
+    /**
+     * Onboarding does not dismiss itself on an answer: the screen moves to the
+     * next unanswered question, and only shows the greeting once nothing is
+     * outstanding.
+     */
     fun onNameEntered(name: String) {
         viewModelScope.launch {
             if (name.isNotBlank()) app.profileStore.setFirstName(name)
-            _uiState.value = _uiState.value.copy(showWelcome = false)
+            _uiState.value = _uiState.value.copy(nameSkipped = name.isBlank())
+        }
+    }
+
+    fun onNameSkipped() {
+        _uiState.value = _uiState.value.copy(nameSkipped = true)
+    }
+
+    fun onRegionSkipped() {
+        _uiState.value = _uiState.value.copy(regionSkipped = true, regionError = null)
+    }
+
+    /**
+     * Resolves a postcode to a transmitter region and stores it. A failure
+     * keeps the viewer on the question with a reason, rather than moving on
+     * with a national guide they did not choose.
+     */
+    fun onPostcodeEntered(postcode: String) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isResolvingRegion = true, regionError = null)
+            val network = app.freeviewApi.networkFor(postcode)
+            if (network == null) {
+                _uiState.value = _uiState.value.copy(
+                    isResolvingRegion = false,
+                    regionError = "We could not find a TV region for that postcode. " +
+                        "Check it and try again, or skip for a national guide.",
+                )
+                return@launch
+            }
+            app.profileStore.setRegion(postcode, network.network_id, network.network_name)
+            _uiState.value = _uiState.value.copy(isResolvingRegion = false, regionError = null)
+            refresh()
         }
     }
 
@@ -390,20 +435,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch { app.profileStore.setFirstName(name) }
     }
 
-    /** Resolves a postcode to a transmitter region, then reloads the guide. */
-    fun setPostcode(postcode: String) {
-        viewModelScope.launch {
-            val network = app.freeviewApi.networkFor(postcode)
-            if (network == null) {
-                _uiState.value = _uiState.value.copy(
-                    developerMessage = "Could not find a TV region for that postcode.",
-                )
-                return@launch
-            }
-            app.profileStore.setRegion(postcode, network.network_id, network.network_name)
-            refresh()
-        }
-    }
+    fun setPostcode(postcode: String) = onPostcodeEntered(postcode)
 
     fun setDefaultLeadMinutes(minutes: Int) {
         viewModelScope.launch { app.profileStore.setDefaultLeadMinutes(minutes) }

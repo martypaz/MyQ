@@ -49,10 +49,17 @@ fun HomeScreen(viewModel: HomeViewModel) {
 
     if (state.showWelcome) {
         WelcomeScreen(
-            firstName = state.profile.firstName,
-            onNameEntered = viewModel::onNameEntered,
-            onContinue = viewModel::onWelcomeFinished,
+            profile = state.profile,
             isProfileLoaded = state.isProfileLoaded,
+            needsName = state.needsName,
+            needsRegion = state.needsRegion,
+            isResolvingRegion = state.isResolvingRegion,
+            regionError = state.regionError,
+            onNameEntered = viewModel::onNameEntered,
+            onNameSkipped = viewModel::onNameSkipped,
+            onPostcodeEntered = viewModel::onPostcodeEntered,
+            onRegionSkipped = viewModel::onRegionSkipped,
+            onContinue = viewModel::onWelcomeFinished,
         )
         return
     }
